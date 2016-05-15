@@ -67,9 +67,9 @@ for dup in (0, 1):
     plt.title('duplicate? ' + str(dup))
     plt.show()
 
-# same metro or location ?
+# same metro or location or category ?
 
-for var in ('metroID', 'locationID'):
+for var in ('metroID', 'locationID', 'categoryID'):
     loc = Xinfo.as_matrix([var])
 
     for dup in (0, 1):

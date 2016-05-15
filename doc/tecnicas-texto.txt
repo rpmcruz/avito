@@ -1,0 +1,41 @@
+A mais baixo nível temos o Bag Of Words (BOW), em que:
+
+* é construído um dicionário para mapear inteiros em palavras
+* cada documento é representado por um vector de frequências v
+
+O BOW pode depois ser transformado num dos seguintes:
+
+    1. TF-IDF em que v_i = TF_i / IDF_i, em que TF_i é normalmente a frequência
+    normalizada (v_i/sum(v_i)), e IDF_i significa o inverso da frequência nos
+    documentos e o objectivo é punir palavras que aparecem ao longo de muitos
+    documentos (para beneficiar palavras únicas).
+    Ou seja, o vector de inteiros passa a um vector de reais, tipicamente
+    normalizado.
+    
+    2. LSI ou LSA: normalmente é aplicado depois do TF-IDF para reduzir a
+    dimensionalidade do vector. Eles chamam ao novo vector de "tópicos". Mas é
+    uma técnica não-supervisionada: os "tópicos" devem ser vistos como clusters,
+    não são necessariamente tópicos reais.
+    No final, cada tópico é escrito como uma combinação linear das palavras.
+    Não percebi bem em que difere do LDA (acho que é só mesmo na técnica de
+    estimação, que acho que é Expectation-Maximization).
+
+    3. LDA: outra técnica de redução de dimensionalidade semelhante ao PCA.
+    Portanto, o vector é comprimido num novo vector em que cada elemento é
+    escrito à custa duma combinação linear do vector original. Intuitivamente:
+    palavras muito correlacionadas são comprimidas numa só palavra, porque se
+    sabes que a palavra "Fiat" aparece sempre que se fala em "carro" então
+    se souberes que "carro" aparece 3 vezes também sabes que "Fiat" aparece 3
+    vezes e podes comprimir numa nova palavra TF_nova = TF_fiat = TF_carro.
+
+    4. Word2Vec usando o modelo CBOW: usa uma rede neuronal treinada com base
+    em "janelas" das N palavras vizinhas para prever essa palavra (e
+    vice-versa). N é um hiperparametro (ou seja, temos que definir nós). O
+    código word2vec do gensim é um wrapper do word2vec da google. Parece
+    resultar num espaço de vectores mais interessante que as abordagens
+    anteriores: dá para fazer as tais coisas como:
+    Portugal - Lisboa + Espanha = Madrid.
+
+O pacote gensim serve de wrapper para todas estas técnicas e as funções de
+semelhança são comuns a todas. É possível alternar entre técnicas sem que nada
+deixe de funcionar.
