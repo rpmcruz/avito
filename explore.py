@@ -8,11 +8,13 @@ import pandas as pd
 from scipy import stats
 
 print 'load items info...'
-Xinfo = pd.read_csv('data/ItemInfo_train.csv')
+Xinfo = pd.read_csv('data/ItemInfo_train.csv', index_col=0)
 print 'load items pairs...'
 Xpair = pd.read_csv('data/ItemPairs_train.csv')
 
 # idxmap is an efficient mapping between item-id and row index
+# we could also use Xinfo.ix[indices], but this approach seems
+# slightly faster
 print 'load items mapping...'
 if os.path.exists('idxmap.pickle'):
     with open('idxmap.pickle', 'rb') as f:
@@ -39,7 +41,7 @@ dpairs = (
     Xpair[Xpair['isDuplicate'] == 1].as_matrix(['itemID_1', 'itemID_2']),
 )
 
-# distances
+print 'distances'
 
 geo = Xinfo.as_matrix(['lat', 'lon'])
 
@@ -61,7 +63,7 @@ for density in (False, True):
     plt.legend(title='is duplicate?')
     plt.show()
 
-# positions
+print 'map positions'
 
 for dup in (0, 1):
     pairs = dpairs[dup].flatten()
@@ -70,7 +72,7 @@ for dup in (0, 1):
     plt.title('duplicate? ' + str(dup))
     plt.show()
 
-# same metro or location or category ?
+print 'same metro, location, category'
 
 for var in ('metroID', 'locationID', 'categoryID'):
     loc = Xinfo.as_matrix([var])
@@ -87,7 +89,7 @@ for var in ('metroID', 'locationID', 'categoryID'):
     plt.ylim(0, 1)
     plt.show()
 
-# duplicados por categoria
+print 'dups per category'
 
 from categorias import categorias
 cat = Xinfo.as_matrix(['categoryID'])
@@ -110,7 +112,7 @@ plt.xlim(0, 1)
 plt.ylim(0, len(freqs))
 plt.show()
 
-# prices
+print 'prices'
 
 
 def diff_price(p0, p1):
@@ -130,6 +132,6 @@ plt.xlabel('is duplicate?')
 plt.ylabel('relative price difference')
 plt.show()
 
-print 'prices difference quantiles:'
+print 'quantiles'
 print '0, 25, 50, 75, 100:', np.percentile(dprices[1], [0, 25, 50, 75, 100])
 print '90-100:', np.percentile(dprices[1], np.arange(90, 101))
