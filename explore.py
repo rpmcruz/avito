@@ -7,22 +7,24 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+print 'load items info...'
 Xinfo = pd.read_csv('data/ItemInfo_train.csv')
+print 'load items pairs...'
 Xpair = pd.read_csv('data/ItemPairs_train.csv')
 
 # idxmap is an efficient mapping between item-id and row index
+print 'load items mapping...'
 if os.path.exists('idxmap.pickle'):
     with open('idxmap.pickle', 'rb') as f:
         idxmap = pickle.load(f)
 else:
     lastid = Xinfo['itemID'].iloc[-1]
-    idxmap = np.zeros(lastid+1, int)-1
+    idxmap = np.zeros(lastid+1, int)
     for idx, item in Xinfo.iterrows():
-        if idx % np.ceil(100./Xinfo.shape[0]) == 0:
+        if idx % np.ceil(Xinfo.shape[0]/100.) == 0:
             sys.stdout.write('\r%2d%%' % (100*idx/Xinfo.shape[0]))
         idxmap[item['itemID']] = idx
     sys.stdout.write('\r            \r')
-
     with open('idxmap.pickle', 'wb') as f:
         pickle.dump(idxmap, f, pickle.HIGHEST_PROTOCOL)
 
