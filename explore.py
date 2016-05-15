@@ -130,5 +130,6 @@ plt.xlabel('is duplicate?')
 plt.ylabel('relative price difference')
 plt.show()
 
-print np.percentile(dprices[1], [0, 25, 50, 75, 100])
-print np.percentile(dprices[1], np.arange(90, 101))
+print 'prices difference quantiles:'
+print '0, 25, 50, 75, 100:', np.percentile(dprices[1], [0, 25, 50, 75, 100])
+print '90-100:', np.percentile(dprices[1], np.arange(90, 101))
