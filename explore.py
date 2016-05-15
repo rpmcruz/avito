@@ -18,7 +18,8 @@ else:
     lastid = Xinfo['itemID'].iloc[-1]
     idxmap = np.zeros(lastid+1, int)-1
     for idx, item in Xinfo.iterrows():
-        sys.stdout.write('\r%2d%%' % (100*idx/Xinfo.shape[0]))
+        if idx % np.ceil(100./Xinfo.shape[0]) == 0:
+            sys.stdout.write('\r%2d%%' % (100*idx/Xinfo.shape[0]))
         idxmap[item['itemID']] = idx
     sys.stdout.write('\r            \r')
 
@@ -83,6 +84,29 @@ for var in ('metroID', 'locationID', 'categoryID'):
     plt.title(var)
     plt.ylim(0, 1)
     plt.show()
+
+# duplicados por categoria
+
+from categorias import categorias
+cat = Xinfo.as_matrix(['categoryID'])
+uniquecat = np.unique(cat)
+freqs = []
+
+for i in uniquecat:
+    n0 = np.sum(cat[idxmap[dpairs[0].flatten()]] == i)
+    n1 = np.sum(cat[idxmap[dpairs[1].flatten()]] == i)
+    freqs.append(n1 / float(n0+n1))
+
+s = np.argsort(freqs)
+freqs = np.asarray(freqs)[s]
+uniquecat = uniquecat[s]
+
+plt.barh(np.arange(len(freqs)), freqs)
+plt.yticks(np.arange(len(freqs)), [categorias[i] for i in uniquecat],
+           fontsize=10)
+plt.xlim(0, 1)
+plt.ylim(0, len(freqs))
+plt.show()
 
 # prices
 
