@@ -4,7 +4,7 @@ import string
 import enchant
 import pandas as pd
 
-Xinfo = pd.read_csv('data/ItemInfo_train.csv')
+Xinfo = pd.read_csv('data/ItemInfo_train.csv', index_col=0)
 with open('colors.txt') as f:
     colors = f.readlines()
 
