@@ -20,12 +20,12 @@ if os.path.exists('idxmap.pickle'):
     with open('idxmap.pickle', 'rb') as f:
         idxmap = pickle.load(f)
 else:
-    lastid = Xinfo['itemID'].iloc[-1]
+    lastid = Xinfo.index[-1]
     idxmap = np.zeros(lastid+1, int)
-    for idx, item in Xinfo.iterrows():
+    for i, (idx, item) in enumerate(Xinfo.iterrows()):
         if idx % np.ceil(Xinfo.shape[0]/100.) == 0:
             sys.stdout.write('\r%2d%%' % (100*idx/Xinfo.shape[0]))
-        idxmap[item['itemID']] = idx
+        idxmap[idx] = i
     sys.stdout.write('\r            \r')
     with open('idxmap.pickle', 'wb') as f:
         pickle.dump(idxmap, f, pickle.HIGHEST_PROTOCOL)
