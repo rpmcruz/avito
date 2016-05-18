@@ -53,10 +53,10 @@ for category in Xinfo['categoryID'].unique():
 
                 plt.subplot(1, 2, dup+1)
                 plt.imshow(wordcloud)
+                plt.axis('off')
                 if dup == 0:
                     plt.title(categorias[category])
         except Exception as ex:
             print 'Wordcloud Error - ignoring:', ex
-    plt.axis('off')
     plt.show()
     toc()
