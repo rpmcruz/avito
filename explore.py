@@ -2,19 +2,26 @@
 
 import os
 import sys
+from tictoc import tic, toc
 import pickle
 import numpy as np
 import pandas as pd
 from scipy import stats
 
 print 'load items info...'
-Xinfo = pd.read_csv('data/ItemInfo_train.csv', index_col=0)
+tic()
+Xinfo = pd.read_csv('data/ItemInfo_train.csv', index_col=0,
+                    usecols=[0, 1, 6, 7, 8, 9, 10])
+toc()
 print 'load items pairs...'
-Xpair = pd.read_csv('data/ItemPairs_train.csv')
+tic()
+Xpair = pd.read_csv('data/ItemPairs_train.csv', usecols=[0, 1, 2])
+toc()
 
 # idxmap is an efficient mapping between item-id and row index
 # we could also use Xinfo.ix[indices], but this approach seems
 # slightly faster
+tic()
 print 'load items mapping...'
 if os.path.exists('idxmap.pickle'):
     with open('idxmap.pickle', 'rb') as f:
@@ -29,6 +36,7 @@ else:
     sys.stdout.write('\r            \r')
     with open('idxmap.pickle', 'wb') as f:
         pickle.dump(idxmap, f, pickle.HIGHEST_PROTOCOL)
+toc()
 
 # compare stuff between articles
 
@@ -42,6 +50,7 @@ dpairs = (
 )
 
 print 'distances'
+tic()
 
 geo = Xinfo.as_matrix(['lat', 'lon'])
 
@@ -62,8 +71,10 @@ for density in (False, True):
                      color=colors[dup], label=str(dup), alpha=0.3)
     plt.legend(title='is duplicate?')
     plt.show()
+toc()
 
 print 'map positions'
+tic()
 
 for dup in (0, 1):
     pairs = dpairs[dup].flatten()
@@ -71,8 +82,10 @@ for dup in (0, 1):
                 color=colors[dup], s=3)
     plt.title('duplicate? ' + str(dup))
     plt.show()
+toc()
 
 print 'same metro, location, category'
+tic()
 
 for var in ('metroID', 'locationID', 'categoryID'):
     loc = Xinfo.as_matrix([var])
@@ -88,8 +101,10 @@ for var in ('metroID', 'locationID', 'categoryID'):
     plt.title(var)
     plt.ylim(0, 1)
     plt.show()
+toc()
 
 print 'dups per category'
+tic()
 
 from categorias import categorias
 cat = Xinfo.as_matrix(['categoryID'])
@@ -111,8 +126,10 @@ plt.yticks(np.arange(len(freqs)), [categorias[i] for i in uniquecat],
 plt.xlim(0, 1)
 plt.ylim(0, len(freqs))
 plt.show()
+toc()
 
 print 'prices'
+tic()
 
 
 def diff_price(p0, p1):
@@ -131,6 +148,7 @@ plt.boxplot(dprices, labels=[0, 1])
 plt.xlabel('is duplicate?')
 plt.ylabel('relative price difference')
 plt.show()
+toc()
 
 print 'quantiles'
 print '0, 25, 50, 75, 100:', np.percentile(dprices[1], [0, 25, 50, 75, 100])
