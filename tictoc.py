@@ -15,3 +15,4 @@ def toc():
         print '%ds' % (time.time() - startTime_for_tictoc)
     else:
         print "Toc: start time not set"
+    tic()
