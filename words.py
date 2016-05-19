@@ -2,6 +2,7 @@
 
 from tictoc import tic, toc
 import pickle
+import collections
 import pandas as pd
 from wordcloud import WordCloud
 from stop_words import get_stop_words
@@ -47,6 +48,7 @@ for category in Xinfo['categoryID'].unique():
                 words = [t.split() for t in items['description']]
                 words = [word for sublist in words for word in sublist]
                 words = [word for word in words if word not in stopwords]
+                print collections.Counter(words).most_common(10)
                 #words = translate(words)
                 text = u'\n'.join(words)
                 wordcloud = WordCloud().generate(text)
@@ -57,6 +59,6 @@ for category in Xinfo['categoryID'].unique():
                 if dup == 0:
                     plt.title(categorias[category])
         except Exception as ex:
-            print 'Wordcloud Error - ignoring:', ex
+            print 'Wordcloud Error:', ex
     plt.show()
     toc()
