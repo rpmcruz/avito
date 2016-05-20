@@ -65,14 +65,16 @@ toc()
 print 'calculate averages...'
 
 tic()
-total = [np.sum(Xpairs[:, 2] == 0), np.sum(Xpairs[:, 2] == 1)]
-avg = [0, 0]
+total = np.zeros(2)
+sum = np.zeros(2)
 for z, (i1, i2, dup) in enumerate(Xpairs):
     if i1 in Xinfo.index and i2 in Xinfo.index:
         sys.stdout.write('\r%d%%' % (100*z/len(Xpairs)))
         row1 = Xinfo.ix[i1]['row']
         row2 = Xinfo.ix[i2]['row']
-        avg[dup] += cossim(tfidf[bags[row1]], tfidf[bags[row2]]) / total[dup]
+        sum[dup] += cossim(tfidf[bags[row1]], tfidf[bags[row2]])
+        total[dup] += 1
 sys.stdout.write('\r           \r')
 toc()
+avg = sum / total
 print avg
