@@ -6,6 +6,8 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from gensim import corpora, models
 from gensim.matutils import cossim
 
+COLUMN = 2
+
 
 class TitleIter:
     def __init__(self, documents):
@@ -24,7 +26,7 @@ class ExtractTitle(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         rows = np.unique(X.flatten())
-        corpus = preprocess.Documents('../data/ItemInfo_train.csv', 2, rows)
+        corpus = preprocess.Documents('../data/ItemInfo_train.csv', COLUMN, rows)
         self.dictionary = corpora.Dictionary(TitleIter(corpus), None)
         self.dictionary.filter_extremes(3)
         self.dictionary.compactify()
@@ -34,7 +36,7 @@ class ExtractTitle(BaseEstimator, ClassifierMixin):
     def transform(self, X, y):
         rows, ix = np.unique(X.flatten(), return_inverse=True)
         assert len(ix) % 2 == 0  # must be even
-        corpus = preprocess.Documents('../data/ItemInfo_train.csv', 2, rows)
+        corpus = preprocess.Documents('../data/ItemInfo_train.csv', COLUMN, rows)
         corpus = TitleIter(corpus)
         bags = [self.dictionary.doc2bow(d) for d in corpus]
         ret = []
