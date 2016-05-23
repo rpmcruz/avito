@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from utils.tictoc import tic, toc
 
-CATEGORY = 84
+CATEGORY = 84  # 0 to disable
 
 # load some basic stuff
 print 'load...'
@@ -13,12 +13,13 @@ tic()
 Xinfo = pd.read_csv('../data/ItemInfo_train.csv', dtype=int, usecols=(0, 1),
                     index_col=0)
 Xinfo['line'] = np.arange(len(Xinfo))
-Xinfo = Xinfo[Xinfo['categoryID'] == CATEGORY]
 toc()
 Xpairs = np.loadtxt('../data/ItemPairs_train.csv', int, delimiter=',',
                     skiprows=1, usecols=(0, 1, 2))
-Xpairs = [(i1, i2, d) for i1, i2, d in Xpairs
-          if i1 in Xinfo.index and i2 in Xinfo.index]
+if CATEGORY:
+    Xinfo = Xinfo[Xinfo['categoryID'] == CATEGORY]
+    Xpairs = [(i1, i2, d) for i1, i2, d in Xpairs
+              if i1 in Xinfo.index and i2 in Xinfo.index]
 toc()
 
 # cross-validation
