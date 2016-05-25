@@ -8,7 +8,7 @@ print 'load...'
 
 tic()
 info = pd.read_csv('../data/ItemInfo_train.csv',
-                   dtype={'itemID': int, 'categoryID': int, 'price': float},
+                   dtype={'itemID': int, 'categoryID': str, 'price': float},
                    usecols=(0, 1, 4, 6), index_col=0)
 info['line'] = np.arange(len(info))
 toc()
@@ -29,12 +29,20 @@ print 'cross-validation...'
 
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import OneHotEncoder
 from features.title import ExtractTitle
 
-Xinfo = info.as_matrix(['price', 'categoryID'])
+prices = info.as_matrix(['price'])[:, -1]
+prices[np.isnan(prices)] = -10000  # HACK: some prices are NaN
 
-# HACK: some prices are NaN
-Xinfo[:, 0][np.isnan(Xinfo[:, 0])] = -10000
+# Este encoding que eu faço aqui é por causa duma limitação do sklearn
+# Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
+# categoria passa a ser um binário. Ele só funciona assim. Isto não é uma
+# limitação das árvores de decisão em teoria, mas é uma limitação do sklearn.
+# Há outro software que podemos eventualmente usar que não precisa disto...
+categories = info.as_matrix(['categoryID'])
+encoding = OneHotEncoder(dtype=int, sparse=False)
+categories = encoding.fit_transform(info.as_matrix(['categoryID']))
 
 idx = np.arange(len(lines))
 np.random.shuffle(idx)
@@ -46,9 +54,9 @@ X1 = ExtractTitle(2).fit(lines).transform(lines)
 toc()
 X2 = ExtractTitle(3).fit(lines).transform(lines)
 toc()
-X3 = np.abs(Xinfo[lines[:, 0], 0] - Xinfo[lines[:, 1], 0])
+X3 = np.abs(prices[lines[:, 0]] - prices[lines[:, 1]])
 toc()
-X4 = Xinfo[lines[:, 0], 1] == Xinfo[lines[:, 1], 1]
+X4 = categories[lines[:, 0]]  # does not matter: they are the same
 toc()
 # X5 = lista de hashes
 #toc()
@@ -70,14 +78,14 @@ print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (
     TN / float(np.sum(y[ts] == 0)), FP / float(np.sum(y[ts] == 0)),
     FN / float(np.sum(y[ts] == 1)), TP / float(np.sum(y[ts] == 1)))
 
-DRAW_TREE = False
+DRAW_TREE = False  # this does not work in Windows
 if DRAW_TREE:
     import os
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
     m = DecisionTreeClassifier(max_depth=4)
     m.fit(X, y)
-    export_graphviz(m, feature_names=[
-        'title', 'description', 'dprice', 'same-category'], class_names=[
-        'different', 'duplicate'], label='none', impurity=False, filled=True)
-    os.system('dot -Tpdf tree.dot -o ../tree.pdf')
+    export_graphviz(m,  # feature_names=['title', 'description', 'dprice'],
+                    class_names=['different', 'duplicate'], label='none',
+                    impurity=False, filled=True)
+    os.system('dot -Tpdf tree.dot -o ../tree.pdf')  # compile dot file
     os.remove('tree.dot')
