@@ -37,7 +37,8 @@ from sklearn.cross_validation import StratifiedKFold
 from sklearn.metrics import accuracy_score
 from features.title import ExtractTitle
 
-for i, (tr, ts) in enumerate(StratifiedKFold(y)):
+def evaluate(args):
+    tr, ts = args
     tic()
     m = ExtractTitle().fit(X[tr], y)
     #print m.dictionary.token2id  # DEBUG
@@ -45,6 +46,11 @@ for i, (tr, ts) in enumerate(StratifiedKFold(y)):
     # TODO:
     # - add other features
     # - use something like a forest
-    print 'fold %d - baseline: %.4f - title: %.4f' % (
-        i+1, np.sum(y[ts] == 0)/float(len(ts)), accuracy_score(y[ts], yp))
+    print 'baseline: %.4f - title: %.4f' % (
+        np.sum(y[ts] == 0)/float(len(ts)), accuracy_score(y[ts], yp))
     toc()
+
+import multiprocessing
+p = multiprocessing.Pool()
+folds = StratifiedKFold(y)
+p.map(evaluate, folds)
