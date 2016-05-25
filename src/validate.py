@@ -39,6 +39,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from features.title import ExtractTitle
 
+
 def evaluate(args):
     tr, ts = args
     tic()
@@ -46,7 +47,8 @@ def evaluate(args):
     toc()
     X2 = ExtractTitle(3).fit(X[tr], y).transform(X[ts], y[ts])
     toc()
-    X3 = np.abs(Xinfo.iloc[X[tr, 0]]['price'] - Xinfo.iloc[X[tr, 1]]['price'])
+    X3 = np.abs(Xinfo.iloc[X[tr][:, 0]]['price'] -
+                Xinfo.iloc[X[tr][:, 1]]['price'])
     toc()
     _X = np.c_[X1, X2, X3]
 
