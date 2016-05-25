@@ -25,6 +25,18 @@ lines = np.asarray(
 y = np.asarray([d for i1, i2, d in Xpairs], int)
 toc()
 
+"""
+images = []
+for arr in Xinfo['images_array']:
+    if np.isnan(arr):
+        images.append(None)
+    else:
+        img = arr.split(', ')[0]
+        dirname = 'Images_%s/%s' % (img[-2], img[-1])
+        filename = str(int(img)) + '.jpg'
+        images.append((dirname, filename))
+"""
+
 print 'cross-validation...'
 
 from sklearn.metrics import accuracy_score, confusion_matrix
