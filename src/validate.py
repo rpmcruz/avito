@@ -12,7 +12,8 @@ print 'load...'
 tic()
 Xinfo = pd.read_csv('../data/ItemInfo_train.csv',
                     dtype={'itemID': int, 'categoryID': int, 'price': float},
-                    usecols=(0, 1, 6), index_col=0)
+                    usecols=(0, 1, 4, 6), index_col=0)
+"""
 images = []
 for arr in Xinfo['images_array']:
     if np.isnan(arr):
@@ -22,6 +23,7 @@ for arr in Xinfo['images_array']:
         dirname = 'Images_%s/%s' % (img[-2], img[-1])
         filename = str(int(img)) + '.jpg'
         images.append((dirname, filename))
+"""
 Xinfo['line'] = np.arange(len(Xinfo))
 toc()
 Xpairs = np.loadtxt('../data/ItemPairs_train.csv', int, delimiter=',',
@@ -30,6 +32,7 @@ if CATEGORY:
     Xinfo = Xinfo[Xinfo['categoryID'] == CATEGORY]
     Xpairs = [(i1, i2, d) for i1, i2, d in Xpairs
               if i1 in Xinfo.index and i2 in Xinfo.index]
+Xinfo['row'] = np.arange(len(Xinfo))
 toc()
 
 # cross-validation
@@ -37,8 +40,10 @@ print 'cross-validation...'
 
 tic()
 X = np.asarray(
-    [(Xinfo.ix[i1]['line'], Xinfo.ix[i2]['line']) for i1, i2, d in Xpairs])
-y = np.asarray([d for i1, i2, d in Xpairs])
+    [(Xinfo.ix[i1]['line'], Xinfo.ix[i2]['line'],
+      Xinfo.ix[i1]['row'], Xinfo.ix[i2]['row']) for i1, i2, d in Xpairs],
+    int)
+y = np.asarray([d for i1, i2, d in Xpairs], int)
 toc()
 
 print '%%dup: %.2f' % (np.sum(y == 1)/float(len(y)))
@@ -49,15 +54,16 @@ from sklearn.ensemble import RandomForestClassifier
 from features.title import ExtractTitle
 
 
-def evaluate(args):
-    tr, ts = args
+#def evaluate(args):
+if True:
+    tr, ts = (np.arange(len(y)), np.arange(len(y)))
     tic()
-    X1 = ExtractTitle(2).fit(X[tr], y).transform(X[ts], y[ts])
+    X1 = ExtractTitle(2).fit(X[tr, :2], y).transform(X[ts], y[ts])
     toc()
-    X2 = ExtractTitle(3).fit(X[tr], y).transform(X[ts], y[ts])
+    X2 = ExtractTitle(3).fit(X[tr, :2], y).transform(X[ts], y[ts])
     toc()
-    X3 = np.abs(Xinfo.iloc[X[tr][:, 0]]['price'] -
-                Xinfo.iloc[X[tr][:, 1]]['price'])
+    prices = Xinfo.as_matrix(['price'])
+    X3 = np.abs(prices[X[tr, 2]] - prices[X[tr, 3]])[:, -1]
     toc()
     # X4 = lista de hashes
     #toc()
@@ -80,4 +86,4 @@ p = multiprocessing.Pool(4)
 folds = StratifiedKFold(y)
 p.map(evaluate, folds)
 """
-evaluate((np.arange(len(y)), np.arange(len(y))))
+#evaluate((np.arange(len(y)), np.arange(len(y))))
