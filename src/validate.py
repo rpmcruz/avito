@@ -4,86 +4,68 @@ import pandas as pd
 import numpy as np
 from utils.tictoc import tic, toc
 
-CATEGORY = 84  # 0 to disable
-
-# load some basic stuff
 print 'load...'
 
 tic()
-Xinfo = pd.read_csv('../data/ItemInfo_train.csv',
-                    dtype={'itemID': int, 'categoryID': int, 'price': float},
-                    usecols=(0, 1, 4, 6), index_col=0)
-"""
-images = []
-for arr in Xinfo['images_array']:
-    if np.isnan(arr):
-        images.append(None)
-    else:
-        img = arr.split(', ')[0]
-        dirname = 'Images_%s/%s' % (img[-2], img[-1])
-        filename = str(int(img)) + '.jpg'
-        images.append((dirname, filename))
-"""
-Xinfo['line'] = np.arange(len(Xinfo))
-toc()
-Xpairs = np.loadtxt('../data/ItemPairs_train.csv', int, delimiter=',',
-                    skiprows=1, usecols=(0, 1, 2))
-if CATEGORY:
-    Xinfo = Xinfo[Xinfo['categoryID'] == CATEGORY]
-    Xpairs = [(i1, i2, d) for i1, i2, d in Xpairs
-              if i1 in Xinfo.index and i2 in Xinfo.index]
-Xinfo['row'] = np.arange(len(Xinfo))
+info = pd.read_csv('../data/ItemInfo_train.csv',
+                   dtype={'itemID': int, 'categoryID': int, 'price': float},
+                   usecols=(0, 1, 4, 6), index_col=0)
+info['line'] = np.arange(len(info))
 toc()
 
-# cross-validation
-print 'cross-validation...'
+# NOTA: estou a ler apenas as primeiras 1000 linhas
+Xpairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
+                       skip_header=1, usecols=(0, 1, 2), max_rows=1000)
+toc()
 
+# transforma ItemID em linhas do ficheiro CSV e da matriz info
 tic()
-X = np.asarray(
-    [(Xinfo.ix[i1]['line'], Xinfo.ix[i2]['line'],
-      Xinfo.ix[i1]['row'], Xinfo.ix[i2]['row']) for i1, i2, d in Xpairs],
-    int)
+lines = np.asarray(
+    [(info.ix[i1]['line'], info.ix[i2]['line']) for i1, i2, d in Xpairs], int)
 y = np.asarray([d for i1, i2, d in Xpairs], int)
 toc()
 
-print '%%dup: %.2f' % (np.sum(y == 1)/float(len(y)))
+print 'cross-validation...'
 
-#from sklearn.cross_validation import StratifiedKFold
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
 from features.title import ExtractTitle
 
+Xinfo = info.as_matrix(['price', 'categoryID'])
 
-#def evaluate(args):
-if True:
-    tr, ts = (np.arange(len(y)), np.arange(len(y)))
-    tic()
-    X1 = ExtractTitle(2).fit(X[tr, :2], y).transform(X[ts], y[ts])
-    toc()
-    X2 = ExtractTitle(3).fit(X[tr, :2], y).transform(X[ts], y[ts])
-    toc()
-    prices = Xinfo.as_matrix(['price'])
-    X3 = np.abs(prices[X[tr, 2]] - prices[X[tr, 3]])[:, -1]
-    toc()
-    # X4 = lista de hashes
-    #toc()
-    _X = np.c_[X1, X2, X3]
+# HACK: some prices are NaN
+Xinfo[:, 0][np.isnan(Xinfo[:, 0])] = -10000
 
-    tic()
-    m = RandomForestClassifier(100, max_depth=8)
-    m.fit(_X[tr], y[tr])
-    yp = m.predict(_X[ts])
-    toc()
+idx = np.arange(len(lines))
+np.random.shuffle(idx)
+tr = idx[:(0.70*len(lines))]
+ts = idx[(0.70*len(lines)):]
 
-    print 'baseline: %.4f - title: %.4f (FP: %.2f FN: %.2f)' % (
-        np.sum(y[ts] == 0)/float(len(ts)), accuracy_score(y[ts], yp),
-        np.sum(np.logical_and(yp == 1, y[ts] == 0))/float(np.sum(y[ts] == 0)),
-        np.sum(np.logical_and(yp == 0, y[ts] == 1))/float(np.sum(y[ts] == 1)))
+tic()
+X1 = ExtractTitle(2).fit(lines).transform(lines)
+toc()
+X2 = ExtractTitle(3).fit(lines).transform(lines)
+toc()
+X3 = np.abs(Xinfo[lines[:, 0], 0] - Xinfo[lines[:, 1], 0])
+toc()
+X4 = Xinfo[lines[:, 0], 1] == Xinfo[lines[:, 1], 1]
+toc()
+# X5 = lista de hashes
+#toc()
+X = np.c_[X1, X2, X3, X4]
 
-"""
-import multiprocessing
-p = multiprocessing.Pool(4)
-folds = StratifiedKFold(y)
-p.map(evaluate, folds)
-"""
-#evaluate((np.arange(len(y)), np.arange(len(y))))
+tic()
+m = RandomForestClassifier(100, max_depth=8)
+m.fit(X[tr], y[tr])
+yp = m.predict(X[ts])
+toc()
+
+print 'baseline: %.4f' % (np.sum(y[ts] == 0)/float(len(ts)))
+print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (1, 0, 1, 0)
+print
+
+print 'our model: %.4f' % accuracy_score(y[ts], yp)
+(TN, FP), (FN, TP) = confusion_matrix(y[ts], yp)
+print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (
+    TN / float(np.sum(y[ts] == 0)), FP / float(np.sum(y[ts] == 0)),
+    FN / float(np.sum(y[ts] == 1)), TP / float(np.sum(y[ts] == 1)))

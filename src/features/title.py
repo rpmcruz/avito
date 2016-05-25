@@ -23,7 +23,7 @@ class ExtractTitle(BaseEstimator, ClassifierMixin):
         self.classes_ = (0, 1)
         self.column = column
 
-    def fit(self, X, y):
+    def fit(self, X):
         rows = np.unique(X.flatten())
         corpus = preprocess.Documents('../data/ItemInfo_train.csv',
                                       self.column, rows)
@@ -33,7 +33,7 @@ class ExtractTitle(BaseEstimator, ClassifierMixin):
         self.tfidf = models.TfidfModel(dictionary=self.dictionary)
         return self
 
-    def transform(self, X, y):
+    def transform(self, X):
         rows, ix = np.unique(X.flatten(), return_inverse=True)
         assert len(ix) % 2 == 0  # must be even
         corpus = preprocess.Documents('../data/ItemInfo_train.csv',
