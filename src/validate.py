@@ -13,6 +13,15 @@ tic()
 Xinfo = pd.read_csv('../data/ItemInfo_train.csv',
                     dtype={'itemID': int, 'categoryID': int, 'price': float},
                     usecols=(0, 1, 6), index_col=0)
+images = []
+for arr in Xinfo['images_array']:
+    if np.isnan(arr):
+        images.append(None)
+    else:
+        img = arr.split(', ')[0]
+        dirname = 'Images_%s/%s' % (img[-2], img[-1])
+        filename = str(int(img)) + '.jpg'
+        images.append((dirname, filename))
 Xinfo['line'] = np.arange(len(Xinfo))
 toc()
 Xpairs = np.loadtxt('../data/ItemPairs_train.csv', int, delimiter=',',
@@ -50,6 +59,8 @@ def evaluate(args):
     X3 = np.abs(Xinfo.iloc[X[tr][:, 0]]['price'] -
                 Xinfo.iloc[X[tr][:, 1]]['price'])
     toc()
+    # X4 = lista de hashes
+    #toc()
     _X = np.c_[X1, X2, X3]
 
     tic()
