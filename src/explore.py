@@ -2,7 +2,7 @@
 
 import os
 import sys
-from tictoc import tic, toc
+from utils.tictoc import tic, toc
 import pickle
 import numpy as np
 import pandas as pd
@@ -30,8 +30,8 @@ else:
     lastid = Xinfo.index[-1]
     idxmap = np.zeros(lastid+1, int)
     for i, (idx, item) in enumerate(Xinfo.iterrows()):
-        if idx % np.ceil(Xinfo.shape[0]/100.) == 0:
-            sys.stdout.write('\r%2d%%' % (100*idx/Xinfo.shape[0]))
+        if i % np.ceil(Xinfo.shape[0]/100.) == 0:
+            sys.stdout.write('\r%2d%%' % (100*i/Xinfo.shape[0]))
         idxmap[idx] = i
     sys.stdout.write('\r            \r')
     with open('idxmap.pickle', 'wb') as f:
@@ -106,7 +106,7 @@ toc()
 print 'dups per category'
 tic()
 
-from categorias import categorias
+from utils.categorias import categorias
 cat = Xinfo.as_matrix(['categoryID'])
 uniquecat = np.unique(cat)
 freqs = []
