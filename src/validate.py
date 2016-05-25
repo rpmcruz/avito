@@ -69,3 +69,15 @@ print 'our model: %.4f' % accuracy_score(y[ts], yp)
 print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (
     TN / float(np.sum(y[ts] == 0)), FP / float(np.sum(y[ts] == 0)),
     FN / float(np.sum(y[ts] == 1)), TP / float(np.sum(y[ts] == 1)))
+
+DRAW_TREE = False
+if DRAW_TREE:
+    import os
+    from sklearn.tree import DecisionTreeClassifier, export_graphviz
+    m = DecisionTreeClassifier(max_depth=4)
+    m.fit(X, y)
+    export_graphviz(m, feature_names=[
+        'title', 'description', 'dprice', 'same-category'], class_names=[
+        'different', 'duplicate'], label='none', impurity=False, filled=True)
+    os.system('dot -Tpdf tree.dot -o ../tree.pdf')
+    os.remove('tree.dot')
