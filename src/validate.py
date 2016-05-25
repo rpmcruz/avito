@@ -37,8 +37,6 @@ for arr in Xinfo['images_array']:
         images.append((dirname, filename))
 """
 
-print 'cross-validation...'
-
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
@@ -60,6 +58,8 @@ idx = np.arange(len(lines))
 np.random.shuffle(idx)
 tr = idx[:(0.70*len(lines))]
 ts = idx[(0.70*len(lines)):]
+
+print 'extract features...'
 
 tic()
 X1 = ExtractTitle(2).fit(lines).transform(lines)
