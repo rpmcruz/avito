@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import pandas as pd
 import numpy as np
 from utils.tictoc import tic, toc
@@ -9,39 +10,28 @@ print 'load...'
 tic()
 info = pd.read_csv('../data/ItemInfo_train.csv',
                    dtype={'itemID': int, 'categoryID': str, 'price': float},
-                   usecols=(0, 1, 4, 6), index_col=0)
+                   usecols=(0, 1, 6), index_col=0)
 info['line'] = np.arange(len(info))
 toc()
 
 # NOTA: estou a ler apenas as primeiras 1000 linhas
-Xpairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
-                       skip_header=1, usecols=(0, 1, 2), max_rows=1000)
+pairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
+                      skip_header=1, usecols=(0, 1, 2), max_rows=2500)
 toc()
 
 # transforma ItemID em linhas do ficheiro CSV e da matriz info
 tic()
 lines = np.asarray(
-    [(info.ix[i1]['line'], info.ix[i2]['line']) for i1, i2, d in Xpairs], int)
-y = np.asarray([d for i1, i2, d in Xpairs], int)
+    [(info.ix[i1]['line'], info.ix[i2]['line']) for i1, i2, d in pairs], int)
+y = np.asarray([d for i1, i2, d in pairs], int)
 toc()
-
-"""
-images = []
-for arr in Xinfo['images_array']:
-    if np.isnan(arr):
-        images.append(None)
-    else:
-        img = arr.split(', ')[0]
-        dirname = 'Images_%s/%s' % (img[-2], img[-1])
-        filename = str(int(img)) + '.jpg'
-        images.append((dirname, filename))
-"""
 
 from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
 from features.phone import ExtractPhone
 from features.count_symbols import diff_count_symbols, diff_length
+from features.imagediff import diff_image_hash
 
 prices = info.as_matrix(['price'])[:, -1]
 prices[np.isnan(prices)] = -10000  # HACK: some prices are NaN
@@ -77,11 +67,20 @@ X6 = diff_length(lines, 3)
 toc()
 X = np.c_[X1, X2, X3, X4, X5, X6]
 
+if os.path.exists('../data/Images_0'):
+    tic()
+    X7 = diff_image_hash(lines)
+    X = np.c_[X, X7]
+    toc()
+
 # create model and validate
+
+print 'model...'
 
 tic()
 m = RandomForestClassifier(100, max_depth=14)
 m.fit(X[tr], y[tr])
+toc()
 pp = m.predict_proba(X[ts])[:, 1]
 yp = pp >= 0.5
 toc()
@@ -103,7 +102,7 @@ DRAW_TREE = False  # this does not work in Windows
 if DRAW_TREE:
     import os
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
-    m = DecisionTreeClassifier(max_depth=4)
+    m = DecisionTreeClassifier(max_depth=6)
     m.fit(X, y)
     export_graphviz(m,  # feature_names=['title', 'description', 'dprice'],
                     class_names=['different', 'duplicate'], label='none',
