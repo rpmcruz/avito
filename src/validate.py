@@ -37,7 +37,7 @@ for arr in Xinfo['images_array']:
         images.append((dirname, filename))
 """
 
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
 from features.phone import ExtractPhone
@@ -80,9 +80,10 @@ X = np.c_[X1, X2, X3, X4, X5, X6]
 # create model and validate
 
 tic()
-m = RandomForestClassifier(100, max_depth=12)
+m = RandomForestClassifier(100, max_depth=14)
 m.fit(X[tr], y[tr])
-yp = m.predict(X[ts])
+pp = m.predict_proba(X[ts])[:, 1]
+yp = pp >= 0.5
 toc()
 
 print 'baseline: %.4f' % (np.sum(y[ts] == 0)/float(len(ts)))
@@ -94,6 +95,9 @@ print 'our model: %.4f' % accuracy_score(y[ts], yp)
 print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (
     TN / float(np.sum(y[ts] == 0)), FP / float(np.sum(y[ts] == 0)),
     FN / float(np.sum(y[ts] == 1)), TP / float(np.sum(y[ts] == 1)))
+
+print
+print 'kaggle score:', roc_auc_score(y[ts], pp)
 
 DRAW_TREE = False  # this does not work in Windows
 if DRAW_TREE:
