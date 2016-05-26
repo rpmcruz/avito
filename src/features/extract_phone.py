@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# Extract non-Russian words (except Russian colors)
+# This was thought out mainly for the phones category.
+
 import preprocess
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -7,7 +10,7 @@ from gensim import corpora, models
 from gensim.matutils import cossim
 
 
-class TitleIter:
+class PhoneIter:
     def __init__(self, documents):
         self.documents = documents
 
@@ -18,7 +21,7 @@ class TitleIter:
             yield words
 
 
-class ExtractTitle(BaseEstimator, ClassifierMixin):
+class ExtractPhone(BaseEstimator, ClassifierMixin):
     def __init__(self, column):
         self.classes_ = (0, 1)
         self.column = column
@@ -27,7 +30,7 @@ class ExtractTitle(BaseEstimator, ClassifierMixin):
         rows = np.unique(X.flatten())
         corpus = preprocess.Documents('../data/ItemInfo_train.csv',
                                       self.column, rows)
-        self.dictionary = corpora.Dictionary(TitleIter(corpus), None)
+        self.dictionary = corpora.Dictionary(PhoneIter(corpus), None)
         self.dictionary.filter_extremes(3)
         self.dictionary.compactify()
         self.tfidf = models.TfidfModel(dictionary=self.dictionary)
@@ -38,7 +41,7 @@ class ExtractTitle(BaseEstimator, ClassifierMixin):
         assert len(ix) % 2 == 0  # must be even
         corpus = preprocess.Documents('../data/ItemInfo_train.csv',
                                       self.column, rows)
-        corpus = TitleIter(corpus)
+        corpus = PhoneIter(corpus)
         bags = [self.dictionary.doc2bow(d) for d in corpus]
         ret = []
         for i in xrange(0, len(ix), 2):

@@ -40,7 +40,7 @@ for arr in Xinfo['images_array']:
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
-from features.title import ExtractTitle
+from features.extract_phone import ExtractPhone
 
 prices = info.as_matrix(['price'])[:, -1]
 prices[np.isnan(prices)] = -10000  # HACK: some prices are NaN
@@ -62,9 +62,9 @@ ts = idx[(0.70*len(lines)):]
 print 'extract features...'
 
 tic()
-X1 = ExtractTitle(2).fit(lines).transform(lines)
+X1 = ExtractPhone(2).fit(lines).transform(lines)
 toc()
-X2 = ExtractTitle(3).fit(lines).transform(lines)
+X2 = ExtractPhone(3).fit(lines).transform(lines)
 toc()
 X3 = np.abs(prices[lines[:, 0]] - prices[lines[:, 1]])
 toc()
