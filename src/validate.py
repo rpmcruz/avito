@@ -40,7 +40,8 @@ for arr in Xinfo['images_array']:
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
-from features.extract_phone import ExtractPhone
+from features.phone import ExtractPhone
+from features.count_symbols import diff_count_symbols, diff_length
 
 prices = info.as_matrix(['price'])[:, -1]
 prices[np.isnan(prices)] = -10000  # HACK: some prices are NaN
@@ -54,28 +55,32 @@ categories = info.as_matrix(['categoryID'])
 encoding = OneHotEncoder(dtype=int, sparse=False)
 categories = encoding.fit_transform(info.as_matrix(['categoryID']))
 
-idx = np.arange(len(lines))
+print 'extract features...'
+
+idx = np.arange(len(lines))  # split train and test
 np.random.shuffle(idx)
 tr = idx[:(0.70*len(lines))]
 ts = idx[(0.70*len(lines)):]
 
-print 'extract features...'
-
 tic()
-X1 = ExtractPhone(2).fit(lines).transform(lines)
+X1 = ExtractPhone(2).fit(lines[tr]).transform(lines)
 toc()
-X2 = ExtractPhone(3).fit(lines).transform(lines)
+X2 = ExtractPhone(3).fit(lines[tr]).transform(lines)
 toc()
 X3 = np.abs(prices[lines[:, 0]] - prices[lines[:, 1]])
 toc()
 X4 = categories[lines[:, 0]]  # does not matter: they are the same
 toc()
-# X5 = lista de hashes
-#toc()
-X = np.c_[X1, X2, X3, X4]
+X5 = diff_count_symbols(lines, 3, [',', '.', '!', '-', '*', '•'])
+toc()
+X6 = diff_length(lines, 3)
+toc()
+X = np.c_[X1, X2, X3, X4, X5, X6]
+
+# create model and validate
 
 tic()
-m = RandomForestClassifier(100, max_depth=8)
+m = RandomForestClassifier(100, max_depth=12)
 m.fit(X[tr], y[tr])
 yp = m.predict(X[ts])
 toc()
