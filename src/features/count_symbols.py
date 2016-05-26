@@ -8,7 +8,7 @@ import numpy as np
 
 
 def diff_count_symbols(rows, column, symbols):
-    rows, ix = np.unique(rows.flatten(), return_inverse=True)
+    rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
     corpus = preprocess.Documents('../data/ItemInfo_train.csv', column, rows)
     # this cycle actually seems faster than list comprehension (I guess because
     # this uses numpy to store this big dataframe in memory)
@@ -20,7 +20,7 @@ def diff_count_symbols(rows, column, symbols):
 
 
 def diff_length(rows, column):
-    rows, ix = np.unique(rows.flatten(), return_inverse=True)
+    rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
     corpus = preprocess.Documents('../data/ItemInfo_train.csv', column, rows)
     # this cycle actually seems faster than list comprehension (I guess because
     # this uses numpy to store this big dataframe in memory)
