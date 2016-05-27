@@ -33,10 +33,19 @@ from features.phone import ExtractPhone
 from features.count_symbols import diff_count_symbols, diff_length
 from features.imagediff import diff_image_hash
 
+print 'extract features...'
+
+idx = np.arange(len(lines))  # split train and test
+np.random.shuffle(idx)
+tr = idx[:(0.20*len(lines))]
+ts = idx[(0.20*len(lines)):]
+
+tic()
 prices = info.as_matrix(['price'])[:, -1]
 prices[np.isnan(prices)] = -10000  # HACK: some prices are NaN
-
-# Este encoding que eu faço aqui é por causa duma limitação do sklearn
+X1 = np.abs(prices[lines[:, 0]] - prices[lines[:, 1]])
+toc()
+# Este encoding que eu faço aqui é por causa duma limitação do sklearn.
 # Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
 # categoria passa a ser um binário. Ele só funciona assim. Isto não é uma
 # limitação das árvores de decisão em teoria, mas é uma limitação do sklearn.
@@ -44,34 +53,34 @@ prices[np.isnan(prices)] = -10000  # HACK: some prices are NaN
 categories = info.as_matrix(['categoryID'])
 encoding = OneHotEncoder(dtype=int, sparse=False)
 categories = encoding.fit_transform(info.as_matrix(['categoryID']))
+X2 = categories[lines[:, 0]]  # does not matter: they are the same
+toc()
+X = np.c_[X1, X2]
 
-print 'extract features...'
-
-idx = np.arange(len(lines))  # split train and test
-np.random.shuffle(idx)
-tr = idx[:(0.70*len(lines))]
-ts = idx[(0.70*len(lines)):]
+import enchant
+if enchant.dict_exists('ru'):
+    tic()
+    X1 = ExtractPhone(2).fit(lines[tr]).transform(lines)
+    toc()
+    X2 = ExtractPhone(3).fit(lines[tr]).transform(lines)
+    toc()
+    X = np.c_[X, X1, X2]
+else:
+    print 'Warning: Russian dictionary not found'
 
 tic()
-X1 = ExtractPhone(2).fit(lines[tr]).transform(lines)
+X1 = diff_count_symbols(lines, 3, [',', '.', '!', '-', '*', '•'])
 toc()
-X2 = ExtractPhone(3).fit(lines[tr]).transform(lines)
+X2 = diff_length(lines, 3)
 toc()
-X3 = np.abs(prices[lines[:, 0]] - prices[lines[:, 1]])
-toc()
-X4 = categories[lines[:, 0]]  # does not matter: they are the same
-toc()
-X5 = diff_count_symbols(lines, 3, [',', '.', '!', '-', '*', '•'])
-toc()
-X6 = diff_length(lines, 3)
-toc()
-X = np.c_[X1, X2, X3, X4, X5, X6]
+X = np.c_[X, X1, X2]
 
-if os.path.exists('../data/Images_0'):
+if os.path.exists('../data/Images_9'):
     tic()
-    X7 = diff_image_hash(lines)
-    X = np.c_[X, X7]
+    X = np.c_[X, diff_image_hash(lines)]
     toc()
+else:
+    print 'Warning: images not found'
 
 # create model and validate
 
