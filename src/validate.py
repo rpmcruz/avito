@@ -26,8 +26,6 @@ lines = np.asarray(
 y = np.asarray([d for i1, i2, d in pairs], int)
 toc()
 
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
 from features.phone import ExtractPhone
 from features.count_symbols import diff_count_symbols, diff_length
@@ -56,8 +54,8 @@ X = X1
 tic()
 for attr in ('price', 'locationID', 'metroID', 'lat', 'lon'):
     a = info.as_matrix([attr])[:, -1]
-    a[np.isnan(a)] = -10000  # FIXME: ugly NaN handling
     X1 = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
+    X1[np.isnan(X1)] = -10000  # FIXME: ugly NaN handling
     X = np.c_[X, X1]
 toc()
 
@@ -88,15 +86,24 @@ else:
 
 # create model and validate
 
+from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.grid_search import GridSearchCV
+
 print 'model...'
 
 tic()
 m = RandomForestClassifier(100, max_depth=14)
+# find a better max_depth if you can...
+m = GridSearchCV(m, {'max_depth': range(8, 16+1)}, n_jobs=-1)
 m.fit(X[tr], y[tr])
 toc()
 pp = m.predict_proba(X[ts])[:, 1]
 yp = pp >= 0.5
 toc()
+
+print 'best params:', m.best_params_
+print
 
 print 'baseline: %.4f' % (np.sum(y[ts] == 0)/float(len(ts)))
 print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (1, 0, 1, 0)
