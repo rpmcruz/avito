@@ -10,7 +10,7 @@ print 'load...'
 tic()
 info = pd.read_csv('../data/ItemInfo_train.csv',
                    dtype={'itemID': int, 'categoryID': str, 'price': float},
-                   usecols=(0, 1, 6), index_col=0)
+                   usecols=(0, 1, 6, 7, 8, 9, 10), index_col=0)
 info['line'] = np.arange(len(info))
 toc()
 
@@ -40,22 +40,26 @@ np.random.shuffle(idx)
 tr = idx[:(0.20*len(lines))]
 ts = idx[(0.20*len(lines)):]
 
-tic()
-prices = info.as_matrix(['price'])[:, -1]
-prices[np.isnan(prices)] = -10000  # HACK: some prices are NaN
-X1 = np.abs(prices[lines[:, 0]] - prices[lines[:, 1]])
-toc()
 # Este encoding que eu faço aqui é por causa duma limitação do sklearn.
 # Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
 # categoria passa a ser um binário. Ele só funciona assim. Isto não é uma
 # limitação das árvores de decisão em teoria, mas é uma limitação do sklearn.
 # Há outro software que podemos eventualmente usar que não precisa disto...
+tic()
 categories = info.as_matrix(['categoryID'])
 encoding = OneHotEncoder(dtype=int, sparse=False)
 categories = encoding.fit_transform(info.as_matrix(['categoryID']))
-X2 = categories[lines[:, 0]]  # does not matter: they are the same
+X1 = categories[lines[:, 0]]  # does not matter: they are the same
 toc()
-X = np.c_[X1, X2]
+X = X1
+
+tic()
+for attr in ('price', 'locationID', 'metroID', 'lat', 'lon'):
+    a = info.as_matrix([attr])[:, -1]
+    a[np.isnan(a)] = -10000  # FIXME: ugly NaN handling
+    X1 = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
+    X = np.c_[X, X1]
+toc()
 
 import enchant
 if enchant.dict_exists('ru'):
