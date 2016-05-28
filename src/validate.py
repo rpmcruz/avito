@@ -11,7 +11,7 @@ print '== load =='
 
 tic()
 info = pd.read_csv('../data/ItemInfo_train.csv',
-                   dtype={'itemID': int, 'categoryID': str, 'price': float},
+                   dtype={'itemID': int, 'categoryID': int, 'price': float},
                    usecols=(0, 1, 6, 7, 8, 9, 10), index_col=0)
 info['line'] = np.arange(len(info))
 toc()
@@ -45,13 +45,17 @@ def extract_categories():
     # Há outro software que podemos eventualmente usar que não precisa disto...
     tic()
     from sklearn.preprocessing import OneHotEncoder
-    categories = info.as_matrix(['categoryID'])
-    encoding = OneHotEncoder(dtype=int, sparse=False)
-    categories = encoding.fit_transform(info.as_matrix(['categoryID']))
     # NOTE: all pairs belong to the same category: we only need to use one
-    X = categories[lines[:, 0]]
+    categories = info.iloc[lines[:, 0]].as_matrix(['categoryID'])
+    encoding = OneHotEncoder(dtype=int, sparse=False)
+    categories01 = encoding.fit_transform(categories)
+
+    df = pd.read_csv('../data/Category.csv', dtype=int, index_col=0)
+    parents = df.ix[categories[:, -1]].as_matrix(['parentCategoryID'])
+    encoding = OneHotEncoder(dtype=int, sparse=False)
+    parents01 = encoding.fit_transform(parents)
     toc('categories')
-    return [X]
+    return [categories01, parents01]
 
 
 def extract_attributes():
@@ -149,7 +153,7 @@ from sklearn.grid_search import GridSearchCV
 tic()
 m = RandomForestClassifier(100, max_depth=14)
 # find a better max_depth if you can...
-m = GridSearchCV(m, {'max_depth': range(15, 25+1)}, n_jobs=-1)
+m = GridSearchCV(m, {'max_depth': range(15, 26+1)}, n_jobs=-1)
 m.fit(X[tr], y[tr])
 toc()
 pp = m.predict_proba(X[ts])[:, 1]
