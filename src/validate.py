@@ -18,7 +18,7 @@ toc()
 
 # NOTA: estou a ler apenas as primeiras 1000 linhas
 pairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
-                      skip_header=1, usecols=(0, 1, 2), max_rows=2500)
+                      skip_header=1, usecols=(0, 1, 2), max_rows=5000)
 toc()
 
 # transforma ItemID em linhas do ficheiro CSV e da matriz info
@@ -86,7 +86,7 @@ def extract_images_count():
     from features.image.imagediff import diff_image_count
     tic()
     X = diff_image_count(lines)
-    toc('images hash')
+    toc('images count')
     return [X]
 
 
@@ -149,7 +149,7 @@ from sklearn.grid_search import GridSearchCV
 tic()
 m = RandomForestClassifier(100, max_depth=14)
 # find a better max_depth if you can...
-m = GridSearchCV(m, {'max_depth': range(10, 24+1)}, n_jobs=-1)
+m = GridSearchCV(m, {'max_depth': range(15, 25+1)}, n_jobs=-1)
 m.fit(X[tr], y[tr])
 toc()
 pp = m.predict_proba(X[ts])[:, 1]
@@ -174,7 +174,6 @@ print 'kaggle score:', roc_auc_score(y[ts], pp)
 
 DRAW_TREE = False  # this does not work in Windows
 if DRAW_TREE:
-    import os
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
     m = DecisionTreeClassifier(max_depth=6)
     m.fit(X, y)
