@@ -11,6 +11,7 @@ import numpy as np
 from stop_words import get_stop_words
 stop_words = get_stop_words('ru')
 
+NTOPICS = 50
 DEBUG = False
 
 
@@ -28,7 +29,7 @@ class Topics:
         if DEBUG:
             print 'vocabulary size:', len(self.bow_model.get_feature_names())
 
-        self.lda_model = LatentDirichletAllocation(50)
+        self.lda_model = LatentDirichletAllocation(NTOPICS)
         self.lda_model.fit(X)
         if DEBUG:
             vocab = np.asarray(self.bow_model.get_feature_names())
