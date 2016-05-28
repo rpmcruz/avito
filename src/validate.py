@@ -33,81 +33,102 @@ np.random.shuffle(idx)
 tr = idx[:int(0.60*len(lines))]
 ts = idx[int(0.60*len(lines)):]
 
-X = []  # features
 
-print 'extract categories'
+def extract_categories():
+    # Este encoding que eu faço aqui é por causa duma limitação do sklearn.
+    # Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
+    # categoria passa a ser um binário. Ele só funciona assim. Isto não é uma
+    # limitação das árvores de decisão em teoria, mas é uma limitação do
+    # sklearn.
+    # Há outro software que podemos eventualmente usar que não precisa disto...
+    tic()
+    from sklearn.preprocessing import OneHotEncoder
+    categories = info.as_matrix(['categoryID'])
+    encoding = OneHotEncoder(dtype=int, sparse=False)
+    categories = encoding.fit_transform(info.as_matrix(['categoryID']))
+    # NOTE: all pairs belong to the same category: we only need to use one
+    X = categories[lines[:, 0]]
+    toc('categories')
+    return [X]
 
-# Este encoding que eu faço aqui é por causa duma limitação do sklearn.
-# Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
-# categoria passa a ser um binário. Ele só funciona assim. Isto não é uma
-# limitação das árvores de decisão em teoria, mas é uma limitação do sklearn.
-# Há outro software que podemos eventualmente usar que não precisa disto...
-tic()
-from sklearn.preprocessing import OneHotEncoder
-categories = info.as_matrix(['categoryID'])
-encoding = OneHotEncoder(dtype=int, sparse=False)
-categories = encoding.fit_transform(info.as_matrix(['categoryID']))
-# NOTE: all pairs belong to the same category: we only need to use one
-X.append(categories[lines[:, 0]])
-toc()
 
-print 'extract other attributes'
+def extract_attributes():
+    X = []
+    tic()
+    for attr in ('price', 'locationID', 'metroID', 'lat', 'lon'):
+        a = info.as_matrix([attr])[:, -1]
+        x = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
+        x[np.isnan(x)] = -10000  # NaN handling
+        X.append(x)
+    toc('attributes')
+    return X
 
-tic()
-for attr in ('price', 'locationID', 'metroID', 'lat', 'lon'):
-    a = info.as_matrix([attr])[:, -1]
-    x = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
-    x[np.isnan(x)] = -10000  # NaN handling
-    X.append(x)
-toc()
 
-print 'extract text count differences'
+def extract_text_counts():
+    from features.text.count import diff_count
+    count_fns = [
+        lambda text: text.count(','),
+        lambda text: text.count('.'),
+        lambda text: text.count('!'),
+        lambda text: text.count('-'),
+        lambda text: text.count('*'),
+        lambda text: text.count(u'•'),
+        lambda text: len(text),
+    ]
+    X = diff_count(lines, 3, count_fns)
+    toc('text counts')
+    return [X]
 
-from features.text.count import diff_count
-count_fns = [
-    lambda text: text.count(','),
-    lambda text: text.count('.'),
-    lambda text: text.count('!'),
-    lambda text: text.count('-'),
-    lambda text: text.count('*'),
-    lambda text: text.count(u'•'),
-    lambda text: len(text),
-]
-X.append(diff_count(lines, 3, count_fns))
-toc()
 
-print 'extract brands as distance'
+def extract_brands():
+    from features.text.brands import Brands
+    tic()
+    X = Brands(2).fit(lines[tr]).transform(lines)
+    toc('brands')
+    return [X]
 
-from features.text.brands import Brands
-tic()
-X.append(Brands(2).fit(lines[tr]).transform(lines))
-toc()
 
-print 'extract topics differences'
+def extract_topics():
+    from features.text.topics import Topics
+    tic()
+    X = Topics(3).fit(lines[tr]).transform(lines)
+    toc('topics')
+    return [X]
 
-from features.text.topics import Topics
-tic()
-X.append(Topics(3).fit(lines[tr]).transform(lines))
-toc()
 
-print 'extract images hash differences'
-
-if os.path.exists('../data/Images_9'):
+def extract_images_hash():
     from features.image.imagediff import diff_image_hash
     tic()
-    X.append(diff_image_hash(lines))
-    toc()
+    X = diff_image_hash(lines)
+    toc('images hash')
+    return [X]
+
+import multiprocessing
+pool = multiprocessing.Pool(2)
+
+res = [
+    pool.apply_async(extract_categories),
+    pool.apply_async(extract_attributes),
+    pool.apply_async(extract_text_counts),
+    pool.apply_async(extract_brands),
+    pool.apply_async(extract_topics),
+]
+if os.path.exists('../data/Images_9'):
+    res.append(pool.apply_async(extract_images_hash))
 else:
     print 'Warning: images not found'
+
+X = []
+for r in res:
+    X += r.get()
+for i in xrange(len(X)):  # ensure all are matrices
+    if len(X[i].shape) == 1:
+        X[i] = np.vstack(X[i])
+X = np.concatenate(X, 1)
 
 # create model and validate
 
 print '== model =='
-
-for i in xrange(len(X)):  # ensure all entries are matrices
-    if len(X[i].shape) == 1:
-        X[i] = np.vstack(X[1])
-X = np.concatenate(X, 1)
 
 from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 from sklearn.ensemble import RandomForestClassifier

@@ -9,10 +9,13 @@ def tic():
     startTime_for_tictoc = time.time()
 
 
-def toc():
+def toc(msg=None):
     import time
     if startTime_for_tictoc:
-        print '%ds' % (time.time() - startTime_for_tictoc)
+        if msg:
+            print '%s: %ds' % (msg, time.time() - startTime_for_tictoc)
+        else:
+            print '%ds' % (time.time() - startTime_for_tictoc)
     else:
         print "Toc: start time not set"
     tic()
