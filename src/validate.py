@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from utils.tictoc import tic, toc
 
-print 'load...'
+print '== load =='
 
 tic()
 info = pd.read_csv('../data/ItemInfo_train.csv',
@@ -26,17 +26,16 @@ lines = np.asarray(
 y = np.asarray([d for i1, i2, d in pairs], int)
 toc()
 
-from sklearn.preprocessing import OneHotEncoder
-from features.phone import ExtractPhone
-from features.count_symbols import diff_count_symbols, diff_length
-from features.imagediff import diff_image_hash
-
-print 'extract features...'
+print '== extract features =='
 
 idx = np.arange(len(lines))  # split train and test
 np.random.shuffle(idx)
-tr = idx[:(0.20*len(lines))]
-ts = idx[(0.20*len(lines)):]
+tr = idx[:int(0.60*len(lines))]
+ts = idx[int(0.60*len(lines)):]
+
+X = []  # features
+
+print 'extract categories'
 
 # Este encoding que eu faço aqui é por causa duma limitação do sklearn.
 # Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
@@ -44,58 +43,80 @@ ts = idx[(0.20*len(lines)):]
 # limitação das árvores de decisão em teoria, mas é uma limitação do sklearn.
 # Há outro software que podemos eventualmente usar que não precisa disto...
 tic()
+from sklearn.preprocessing import OneHotEncoder
 categories = info.as_matrix(['categoryID'])
 encoding = OneHotEncoder(dtype=int, sparse=False)
 categories = encoding.fit_transform(info.as_matrix(['categoryID']))
-X1 = categories[lines[:, 0]]  # does not matter: they are the same
+# NOTE: all pairs belong to the same category: we only need to use one
+X.append(categories[lines[:, 0]])
 toc()
-X = X1
+
+print 'extract other attributes'
 
 tic()
 for attr in ('price', 'locationID', 'metroID', 'lat', 'lon'):
     a = info.as_matrix([attr])[:, -1]
-    X1 = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
-    X1[np.isnan(X1)] = -10000  # FIXME: ugly NaN handling
-    X = np.c_[X, X1]
+    x = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
+    x[np.isnan(x)] = -10000  # NaN handling
+    X.append(x)
 toc()
 
-import enchant
-if enchant.dict_exists('ru'):
-    tic()
-    X1 = ExtractPhone(2).fit(lines[tr]).transform(lines)
-    toc()
-    X2 = ExtractPhone(3).fit(lines[tr]).transform(lines)
-    toc()
-    X = np.c_[X, X1, X2]
-else:
-    print 'Warning: Russian dictionary not found'
+print 'extract text count differences'
 
+from features.text.count import diff_count
+count_fns = [
+    lambda text: text.count(','),
+    lambda text: text.count('.'),
+    lambda text: text.count('!'),
+    lambda text: text.count('-'),
+    lambda text: text.count('*'),
+    lambda text: text.count(u'•'),
+    lambda text: len(text),
+]
+X.append(diff_count(lines, 3, count_fns))
+toc()
+
+print 'extract brands as distance'
+
+from features.text.brands import Brands
 tic()
-X1 = diff_count_symbols(lines, 3, [',', '.', '!', '-', '*', '•'])
+X.append(Brands(2).fit(lines[tr]).transform(lines))
 toc()
-X2 = diff_length(lines, 3)
+
+print 'extract topics differences'
+
+from features.text.topics import Topics
+tic()
+X.append(Topics(3).fit(lines[tr]).transform(lines))
 toc()
-X = np.c_[X, X1, X2]
+
+print 'extract images hash differences'
 
 if os.path.exists('../data/Images_9'):
+    from features.image.imagediff import diff_image_hash
     tic()
-    X = np.c_[X, diff_image_hash(lines)]
+    X.append(diff_image_hash(lines))
     toc()
 else:
     print 'Warning: images not found'
 
 # create model and validate
 
+print '== model =='
+
+for i in xrange(len(X)):  # ensure all entries are matrices
+    if len(X[i].shape) == 1:
+        X[i] = np.vstack(X[1])
+X = np.concatenate(X, 1)
+
 from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.grid_search import GridSearchCV
 
-print 'model...'
-
 tic()
 m = RandomForestClassifier(100, max_depth=14)
 # find a better max_depth if you can...
-m = GridSearchCV(m, {'max_depth': range(8, 16+1)}, n_jobs=-1)
+m = GridSearchCV(m, {'max_depth': range(10, 24+1)}, n_jobs=-1)
 m.fit(X[tr], y[tr])
 toc()
 pp = m.predict_proba(X[ts])[:, 1]
