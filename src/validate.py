@@ -15,8 +15,7 @@ info = pd.read_csv('../data/ItemInfo_train.csv',
                    usecols=(0, 1, 6, 7, 8, 9, 10), index_col=0)
 info['line'] = np.arange(len(info))
 toc()
-
-# NOTA: estou a ler apenas as primeiras 1000 linhas
+# NOTA: estou a ler apenas as primeiras N linhas
 pairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
                       skip_header=1, usecols=(0, 1, 2), max_rows=5000)
 toc()
@@ -97,9 +96,10 @@ def extract_images_count():
 def extract_brands():
     from features.text.brands import Brands
     tic()
-    X = Brands(2).fit(lines[tr]).transform(lines)
+    X1 = Brands(2).fit(lines[tr]).transform(lines)
+    X2 = Brands(3).fit(lines[tr]).transform(lines)
     toc('brands')
-    return [X]
+    return [X1, X2]
 
 
 def extract_topics():
@@ -153,7 +153,7 @@ from sklearn.grid_search import GridSearchCV
 tic()
 m = RandomForestClassifier(100, max_depth=14)
 # find a better max_depth if you can...
-m = GridSearchCV(m, {'max_depth': range(15, 26+1)}, n_jobs=-1)
+m = GridSearchCV(m, {'max_depth': range(15, 30+1)}, n_jobs=-1)
 m.fit(X[tr], y[tr])
 toc()
 pp = m.predict_proba(X[ts])[:, 1]

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Extract non-Russian words (except Russian colors)
-# This was thought out mainly for the phones category.
+# Returns matrix of differences between certain count functions, as well as
+# a column saying whether any of those counts is present in both articles too.
 
 from utils.mycorpus import MyCorpus
 import numpy as np
@@ -16,4 +16,6 @@ def diff_count(rows, column, count_fns):
     for i, text in enumerate(corpus):
         for j, fn in enumerate(count_fns):
             count[i, j] = fn(text)
-    return np.abs(count[ix[:(len(ix)/2)]] - count[ix[(len(ix)/2):]])
+    c1 = count[ix[:(len(ix)/2)]]
+    c2 = count[ix[(len(ix)/2):]]
+    return np.c_[np.abs(c1 - c2), np.logical_and(c1 > 0, c2 > 0)]

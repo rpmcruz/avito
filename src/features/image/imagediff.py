@@ -46,4 +46,6 @@ def diff_image_count(rows):
         images = text.split(', ')
         if images != ['']:
             counts[i] = len(images)
-    return np.abs(counts[ix[:(len(ix)/2)]] - counts[ix[(len(ix)/2):]])
+    c1 = counts[ix[:(len(ix)/2)]]
+    c2 = counts[ix[(len(ix)/2):]]
+    return np.c_[np.abs(c1 - c2), np.logical_and(c1 > 0, c2 > 0)]

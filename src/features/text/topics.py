@@ -11,7 +11,9 @@ import numpy as np
 from stop_words import get_stop_words
 stop_words = get_stop_words('ru')
 
-NTOPICS = 50
+NTOPICS = 100
+NGRAM_RANGE = (1, 3)  # default is unigram: (1, 1)
+MIN_DF = 0.01  # can be percentage or absolute value
 DEBUG = False
 
 
@@ -24,16 +26,19 @@ class Topics:
         corpus = MyCorpus('../data/ItemInfo_train.csv', self.column, rows)
 
         self.bow_model = CountVectorizer(
-            stop_words=stop_words, strip_accents='unicode')
+            stop_words=stop_words, strip_accents='unicode',
+            ngram_range=NGRAM_RANGE, min_df=MIN_DF)
         X = self.bow_model.fit_transform(corpus)
         if DEBUG:
             print 'vocabulary size:', len(self.bow_model.get_feature_names())
 
-        self.lda_model = LatentDirichletAllocation(NTOPICS)
+        evaluate_every = 1 if DEBUG else 0
+        self.lda_model = LatentDirichletAllocation(
+            NTOPICS, evaluate_every=evaluate_every)
         self.lda_model.fit(X)
         if DEBUG:
             vocab = np.asarray(self.bow_model.get_feature_names())
-            for i, topic_dist in enumerate(self.model.topic_word_):
+            for i, topic_dist in enumerate(self.lda_model.topic_word_):
                 print i, vocab[np.argsort(topic_dist)[:-10:-1]]
         return self
 
