@@ -97,26 +97,27 @@ def extract_topics():
 
 
 def extract_images_hash():
-    from features.image.imagediff import diff_image_hash
-    tic()
-    X = diff_image_hash(lines)
-    toc('images hash')
-    return [X]
+    if os.path.exists('../data/Images_9'):
+        from features.image.imagediff import diff_image_hash
+        tic()
+        X = diff_image_hash(lines)
+        toc('images hash')
+        return [X]
+    else:
+        print 'Warning: images not found'
+        return []
 
 import multiprocessing
-pool = multiprocessing.Pool(2)
+pool = multiprocessing.Pool(3)
 
 res = [
+    pool.apply_async(extract_images_hash),
+    pool.apply_async(extract_topics),
+    pool.apply_async(extract_text_counts),
     pool.apply_async(extract_categories),
     pool.apply_async(extract_attributes),
-    pool.apply_async(extract_text_counts),
     pool.apply_async(extract_brands),
-    pool.apply_async(extract_topics),
 ]
-if os.path.exists('../data/Images_9'):
-    res.append(pool.apply_async(extract_images_hash))
-else:
-    print 'Warning: images not found'
 
 X = []
 for r in res:
