@@ -4,7 +4,7 @@
 # for Russian color.
 # Should work mostly well for such categories as mobile phones.
 
-from mycorpus import MyCorpus
+from utils.mycorpus import MyCorpus
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 with open('features/text/colors.txt') as f:

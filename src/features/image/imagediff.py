@@ -3,7 +3,7 @@
 # Extract non-Russian words (except Russian colors)
 # This was thought out mainly for the phones category.
 
-from features.text.mycorpus import MyCorpus
+from utils.mycorpus import MyCorpus
 import numpy as np
 import itertools
 from PIL import Image
