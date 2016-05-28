@@ -1,21 +1,28 @@
 # -*- coding: utf-8 -*-
 
-startTime_for_tictoc = None
+_start = None
 
 
 def tic():
     import time
-    global startTime_for_tictoc
-    startTime_for_tictoc = time.time()
+    global _start
+    _start = time.time()
 
 
 def toc(msg=None):
     import time
-    if startTime_for_tictoc:
-        if msg:
-            print '%s: %ds' % (msg, time.time() - startTime_for_tictoc)
+    global _start
+    now = time.time()
+    if _start:
+        dt = now - _start
+        if dt > 60:
+            t = '%dm%02ds' % (dt / 60, dt % 60)
         else:
-            print '%ds' % (time.time() - startTime_for_tictoc)
+            t = '%ds' % dt
+        if msg:
+            print '%-20s %s' % (msg, t)
+        else:
+            print t
     else:
         print "Toc: start time not set"
-    tic()
+    _start = now
