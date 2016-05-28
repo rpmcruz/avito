@@ -3,7 +3,7 @@
 # Extract non-Russian words (except Russian colors)
 # This was thought out mainly for the phones category.
 
-import preprocess
+from features.text.mycorpus import MyCorpus
 import numpy as np
 import itertools
 from PIL import Image
@@ -14,14 +14,17 @@ HASH_SIZE = 8
 
 def diff_image_hash(rows):
     rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
-    corpus = preprocess.Documents('../data/ItemInfo_train.csv', 4, rows)
+    corpus = MyCorpus('../data/ItemInfo_train.csv', 4, rows)
     hashes = [[] for _ in xrange(len(rows))]
     for i, text in enumerate(corpus):
         images = text.split(', ')
         if images != ['']:
             for image in images:
+                dirname = image[-1]
+                if image[-2] != '0':
+                    dirname = image[-2] + dirname
                 filename = '../data/Images_%s/%s/%s.jpg' % (
-                    image[-2], image[-1], image.lstrip('0'))
+                    image[-2], dirname, image.lstrip('0'))
                 h = imagehash.dhash(Image.open(filename), HASH_SIZE)
                 hashes[i].append(h)
     diff = np.ones(len(ix)/2, int)*-1000
