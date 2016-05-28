@@ -82,6 +82,14 @@ def extract_text_counts():
     return [X]
 
 
+def extract_images_count():
+    from features.image.imagediff import diff_image_count
+    tic()
+    X = diff_image_count(lines)
+    toc('images hash')
+    return [X]
+
+
 def extract_brands():
     from features.text.brands import Brands
     tic()
@@ -116,6 +124,7 @@ res = [
     pool.apply_async(extract_images_hash),
     pool.apply_async(extract_topics),
     pool.apply_async(extract_text_counts),
+    pool.apply_async(extract_images_count),
     pool.apply_async(extract_categories),
     pool.apply_async(extract_attributes),
     pool.apply_async(extract_brands),

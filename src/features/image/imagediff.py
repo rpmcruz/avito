@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Extract non-Russian words (except Russian colors)
-# This was thought out mainly for the phones category.
-
 from utils.mycorpus import MyCorpus
 import numpy as np
 import itertools
@@ -39,3 +36,14 @@ def diff_image_hash(rows):
         if mindist != np.inf:
             diff[i] = mindist
     return diff
+
+
+def diff_image_count(rows):
+    rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
+    corpus = MyCorpus('../data/ItemInfo_train.csv', 4, rows)
+    counts = np.zeros(len(rows))
+    for i, text in enumerate(corpus):
+        images = text.split(', ')
+        if images != ['']:
+            counts[i] = len(images)
+    return np.abs(counts[ix[:(len(ix)/2)]] - counts[ix[(len(ix)/2):]])
