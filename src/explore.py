@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import os
 import sys
+sys.dont_write_bytecode = True
+import os
 from utils.tictoc import tic, toc
 import pickle
 import numpy as np
