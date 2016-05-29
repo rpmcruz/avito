@@ -47,4 +47,6 @@ class Topics:
         corpus = MyCorpus('../data/ItemInfo_train.csv', self.column, rows)
         X = self.bow_model.transform(corpus)
         X = self.lda_model.transform(X)
-        return X[ix[:(len(ix)/2)]] - X[ix[(len(ix)/2):]]
+        X1 = X[ix[:(len(ix)/2)]]
+        X2 = X[ix[(len(ix)/2):]]
+        return np.c_[np.abs(X1 - X2), np.sum(X1 * X2, 1)]
