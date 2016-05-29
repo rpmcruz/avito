@@ -54,19 +54,26 @@ def extract_categories():
     encoding = OneHotEncoder(dtype=int, sparse=False)
     parents01 = encoding.fit_transform(parents)
     toc('categories')
-    return [categories01, parents01]
+
+    from utils.categorias import categorias
+    names = ['"' + categorias[i].encode('utf8') + '"'
+             for i in np.unique(categories)]
+    names += ['"' + categorias[i].encode('utf8') + '"'
+              for i in np.unique(parents)]
+    return ([categories01, parents01], names)
 
 
 def extract_attributes():
     X = []
     tic()
-    for attr in ('price', 'locationID', 'metroID', 'lat', 'lon'):
+    attrbs = ('price', 'locationID', 'metroID', 'lat', 'lon')
+    for attr in attrbs:
         a = info.as_matrix([attr])[:, -1]
         x = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
         x[np.isnan(x)] = -10000  # NaN handling
         X.append(x)
     toc('attributes')
-    return X
+    return (X, attrbs)
 
 
 def extract_text_counts():
@@ -82,7 +89,9 @@ def extract_text_counts():
     ]
     X = diff_count(lines, 3, count_fns)
     toc('text counts')
-    return [X]
+    names = ['text-count-diff-%d' % i for i in xrange(len(count_fns))]
+    names += ['text-count-both-%d' % i for i in xrange(len(count_fns))]
+    return ([X], names)
 
 
 def extract_images_count():
@@ -90,7 +99,7 @@ def extract_images_count():
     tic()
     X = diff_image_count(lines)
     toc('images count')
-    return [X]
+    return ([X], ['image-count-diff', 'image-count-both'])
 
 
 def extract_brands():
@@ -99,15 +108,15 @@ def extract_brands():
     X1 = Brands(2).fit(lines[tr]).transform(lines)
     X2 = Brands(3).fit(lines[tr]).transform(lines)
     toc('brands')
-    return [X1, X2]
+    return ([X1, X2], ['brand-title', 'brand-descr'])
 
 
 def extract_topics():
-    from features.text.topics import Topics
+    from features.text.topics import Topics, NTOPICS
     tic()
     X = Topics(3).fit(lines[tr]).transform(lines)
     toc('topics')
-    return [X]
+    return ([X], ['topic-%d' % i for i in xrange(NTOPICS)]+['topic-dist'])
 
 
 def extract_images_hash():
@@ -116,10 +125,10 @@ def extract_images_hash():
         tic()
         X = diff_image_hash(lines)
         toc('images hash')
-        return [X]
+        return ([X], ['image-hash-diff'])
     else:
         print 'Warning: images not found'
-        return []
+        return ([], [])
 
 import multiprocessing
 pool = multiprocessing.Pool(3)
@@ -135,12 +144,16 @@ res = [
 ]
 
 X = []
+names = []
 for r in res:
-    X += r.get()
+    _X, _names = r.get()
+    X += _X
+    names += _names
 for i in xrange(len(X)):  # ensure all are matrices
     if len(X[i].shape) == 1:
         X[i] = np.vstack(X[i])
 X = np.concatenate(X, 1)
+assert X.shape[1] == len(names)
 
 # create model and validate
 
@@ -151,7 +164,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.grid_search import GridSearchCV
 
 tic()
-m = RandomForestClassifier(100, max_depth=14)
+m = RandomForestClassifier(100, max_depth=19)
 # find a better max_depth if you can...
 m = GridSearchCV(m, {'max_depth': range(15, 30+1)}, n_jobs=-1)
 m.fit(X[tr], y[tr])
@@ -179,9 +192,9 @@ print 'kaggle score:', roc_auc_score(y[ts], pp)
 DRAW_TREE = False  # this does not work in Windows
 if DRAW_TREE:
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
-    m = DecisionTreeClassifier(max_depth=6)
+    m = DecisionTreeClassifier(max_depth=14)
     m.fit(X, y)
-    export_graphviz(m,  # feature_names=['title', 'description', 'dprice'],
+    export_graphviz(m, feature_names=names,
                     class_names=['different', 'duplicate'], label='none',
                     impurity=False, filled=True)
     os.system('dot -Tpdf tree.dot -o ../tree.pdf')  # compile dot file
