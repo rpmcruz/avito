@@ -164,10 +164,14 @@ from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.grid_search import GridSearchCV
 
+
+def kaggle_score(m, X, y):
+    return roc_auc_score(y, m.predict_proba(X)[:, 1])
+
 tic()
-m = RandomForestClassifier(100, max_depth=19)
+m = RandomForestClassifier(250)
 # find a better max_depth if you can...
-m = GridSearchCV(m, {'max_depth': range(15, 30+1)}, n_jobs=-1)
+m = GridSearchCV(m, {'max_depth': range(20, 30+1)}, kaggle_score, n_jobs=-1)
 m.fit(X[tr], y[tr])
 toc()
 pp = m.predict_proba(X[ts])[:, 1]
@@ -192,7 +196,7 @@ print 'kaggle score:', roc_auc_score(y[ts], pp)
 
 if os.path.exists('/usr/bin/dot'):  # has graphviz installed?
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
-    m = DecisionTreeClassifier()
+    m = DecisionTreeClassifier(min_samples_leaf=50)
     m.fit(X, y)
     export_graphviz(m, feature_names=names,
                     class_names=['different', 'duplicate'], label='none',
