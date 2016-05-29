@@ -37,7 +37,8 @@ class Brands:
         if DEBUG:
             print latin_vocabulary
 
-        self.tfidf_model = TfidfVectorizer(vocabulary=latin_vocabulary)
+        self.tfidf_model = TfidfVectorizer(
+            min_df=2, vocabulary=latin_vocabulary)
         self.tfidf_model.fit(corpus)
         return self
 
