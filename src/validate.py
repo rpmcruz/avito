@@ -53,13 +53,13 @@ def extract_categories():
     parents = df.ix[categories[:, -1]].as_matrix(['parentCategoryID'])
     encoding = OneHotEncoder(dtype=int, sparse=False)
     parents01 = encoding.fit_transform(parents)
-    toc('categories')
 
     from utils.categorias import categorias
     names = ['"' + categorias[i].encode('utf8') + '"'
              for i in np.unique(categories)]
     names += ['"' + categorias[i].encode('utf8') + '"'
               for i in np.unique(parents)]
+    toc('categories')
     return ([categories01, parents01], names)
 
 
@@ -88,9 +88,10 @@ def extract_text_counts():
         lambda text: len(text),
     ]
     X = diff_count(lines, 3, count_fns)
-    toc('text counts')
+
     names = ['text-count-diff-%d' % i for i in xrange(len(count_fns))]
     names += ['text-count-both-%d' % i for i in xrange(len(count_fns))]
+    toc('text counts')
     return ([X], names)
 
 
