@@ -55,9 +55,9 @@ def extract_categories():
     parents01 = encoding.fit_transform(parents)
 
     from utils.categorias import categorias
-    names = ['"' + categorias[i].encode('utf8') + '"'
+    names = [r'\"' + categorias[i].encode('utf8') + r'\"'
              for i in np.unique(categories)]
-    names += ['"' + categorias[i].encode('utf8') + '"'
+    names += [r'\"' + categorias[i].encode('utf8') + r'\"'
               for i in np.unique(parents)]
     toc('categories')
     return ([categories01, parents01], names)
@@ -190,13 +190,12 @@ print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (
 print
 print 'kaggle score:', roc_auc_score(y[ts], pp)
 
-DRAW_TREE = False  # this does not work in Windows
-if DRAW_TREE:
+if os.path.exists('/usr/bin/dot'):  # has graphviz installed?
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
-    m = DecisionTreeClassifier(max_depth=14)
+    m = DecisionTreeClassifier()
     m.fit(X, y)
     export_graphviz(m, feature_names=names,
                     class_names=['different', 'duplicate'], label='none',
                     impurity=False, filled=True)
-    os.system('dot -Tpdf tree.dot -o ../tree.pdf')  # compile dot file
+    os.system('dot -Tpdf tree.dot -o tree.pdf')  # compile dot file
     os.remove('tree.dot')
