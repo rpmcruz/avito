@@ -49,4 +49,5 @@ class Topics:
         X = self.lda_model.transform(X)
         X1 = X[ix[:(len(ix)/2)]]
         X2 = X[ix[(len(ix)/2):]]
-        return np.c_[np.abs(X1 - X2), np.sum(X1 * X2, 1)]
+        return np.c_[np.abs(X1 - X2), np.sum(X1 * X2, 1),
+                     np.sqrt(np.sum(np.power(X1-X2, 2), 1))]

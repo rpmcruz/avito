@@ -117,7 +117,8 @@ def extract_topics():
     tic()
     X = Topics(3).fit(lines[tr]).transform(lines)
     toc('topics')
-    return ([X], ['topic-%d' % i for i in xrange(NTOPICS)]+['topic-dist'])
+    return ([X], ['topic-%d' % i for i in xrange(NTOPICS)] +
+                 ['topic-dist-cos', 'topic-dist2'])
 
 
 def extract_images_hash():
