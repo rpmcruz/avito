@@ -200,7 +200,7 @@ if os.path.exists('/usr/bin/dot'):  # has graphviz installed?
     m = DecisionTreeClassifier(min_samples_leaf=50)
     m.fit(X, y)
     export_graphviz(m, feature_names=names,
-                    class_names=['different', 'duplicate'], label='none',
+                    class_names=['non-duplicate', 'duplicate'], label='none',
                     impurity=False, filled=True)
     os.system('dot -Tpdf tree.dot -o tree.pdf')  # compile dot file
     os.remove('tree.dot')
