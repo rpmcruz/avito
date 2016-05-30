@@ -20,7 +20,7 @@ def diff_image_hash(rows):
                 dirname = image[-1]
                 if image[-2] != '0':
                     dirname = image[-2] + dirname
-                filename = '../data/Images_%s/%s/%s.jpg' % (
+                filename = '../data/images/Images_%s/%s/%s.jpg' % (
                     image[-2], dirname, image.lstrip('0'))
                 h = imagehash.dhash(Image.open(filename), HASH_SIZE)
                 hashes[i].append(h)
