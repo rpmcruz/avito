@@ -17,7 +17,8 @@ info['line'] = np.arange(len(info))
 toc()
 # NOTA: estou a ler apenas as primeiras N linhas
 pairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
-                      skip_header=1, usecols=(0, 1, 2), max_rows=5000)
+                      skip_header=1, usecols=(0, 1, 2))
+pairs = pairs[np.random.choice(np.arange(len(pairs)), 5000, False)]
 toc()
 
 # transforma ItemID em linhas do ficheiro CSV e da matriz info
@@ -83,7 +84,12 @@ def extract_text_counts():
         lambda text: text.count('.'),
         lambda text: text.count('!'),
         lambda text: text.count('-'),
+        lambda text: text.count('+'),
         lambda text: text.count('*'),
+        lambda text: text.count('_'),
+        lambda text: text.count('1)'),
+        lambda text: text.count('a)'),
+        lambda text: text.count('='),
         lambda text: text.count(u'•'),
         lambda text: len(text),
     ]

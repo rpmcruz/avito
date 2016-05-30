@@ -20,7 +20,8 @@ info = pd.read_csv('../data/ItemInfo_train.csv', dtype={'itemID': int},
 
 # NOTA: estou a ler apenas as primeiras N linhas
 pairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
-                      skip_header=1, usecols=(0, 1, 2), max_rows=50)
+                      skip_header=1, usecols=(0, 1, 2))
+pairs = pairs[np.random.choice(np.arange(len(pairs)), 50, False)]
 
 for i1, i2, dup in pairs:
     t1 = info.ix[i1]['attrsJSON']
