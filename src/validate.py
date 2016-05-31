@@ -18,7 +18,7 @@ toc()
 # NOTA: estou a ler apenas as primeiras N linhas
 pairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
                       skip_header=1, usecols=(0, 1, 2))
-pairs = pairs[np.random.choice(np.arange(len(pairs)), 5000, False)]
+pairs = pairs[np.random.choice(np.arange(len(pairs)), 10000, False)]
 toc()
 
 # transforma ItemID em linhas do ficheiro CSV e da matriz info
@@ -128,7 +128,7 @@ def extract_topics():
 
 
 def extract_images_hash():
-    if os.path.exists('../data/Images_9'):
+    if os.path.exists('../data/images/Images_9'):
         from features.image.imagediff import diff_image_hash
         tic()
         X = diff_image_hash(lines)
