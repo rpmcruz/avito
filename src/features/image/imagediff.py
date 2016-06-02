@@ -22,9 +22,14 @@ def diff_image_hash(rows):
                     dirname = image[-2] + dirname
                 filename = '../data/images/Images_%s/%s/%s.jpg' % (
                     image[-2], dirname, image.lstrip('0'))
-                h = imagehash.dhash(Image.open(filename), HASH_SIZE)
-                hashes[i].append(h)
-    diff = np.ones(len(ix)/2, int)*-1000
+                try:
+                    img = Image.open(filename)
+                except IOError as ex:
+                    print ex, filename
+                else:
+                    h = imagehash.dhash(img, HASH_SIZE)
+                    hashes[i].append(h)
+    diff = np.ones(len(ix)/2, int)*10000
     for i, (ix1, ix2) in enumerate(
             itertools.izip(ix[:(len(ix)/2)], ix[(len(ix)/2):])):
         hs1 = hashes[ix1]

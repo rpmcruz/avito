@@ -71,7 +71,7 @@ def extract_attributes():
     for attr in attrbs:
         a = info.as_matrix([attr])[:, -1]
         x = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
-        x[np.isnan(x)] = -10000  # NaN handling
+        x[np.isnan(x)] = 10000  # NaN handling
         X.append(x)
     toc('attributes')
     return (X, attrbs)
