@@ -56,7 +56,7 @@ lines_tr = np.asarray(
     [(info_tr.ix[i1]['line'], info_tr.ix[i2]['line'])
      for i1, i2, d in pairs_tr], int)
 lines_ts = np.asarray(
-    [(info_tr.ix[i1]['line'], info_tr.ix[i2]['line'])
+    [(info_ts.ix[i1]['line'], info_ts.ix[i2]['line'])
      for i1, i2 in pairs_ts], int)
 toc()
 
