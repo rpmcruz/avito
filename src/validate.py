@@ -187,7 +187,7 @@ def extract_images_hash():
         return ([Xtr], [Xts], ['image-hash-diff'])
     else:
         print 'Warning: images not found'
-        return ([], [])
+        return ([], [], [])
 
 import multiprocessing
 pool = multiprocessing.Pool(2)
