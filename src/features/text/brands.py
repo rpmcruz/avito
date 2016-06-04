@@ -17,9 +17,9 @@ class Brands:
     def __init__(self, column):
         self.column = column
 
-    def fit(self, rows):
+    def fit(self, filename, rows):
         rows = np.unique(rows.flatten())
-        corpus = MyCorpus('../data/ItemInfo_train.csv', self.column, rows)
+        corpus = MyCorpus(filename, self.column, rows)
 
         import string
         from alphabet_detector import AlphabetDetector
@@ -42,9 +42,9 @@ class Brands:
         self.tfidf_model.fit(corpus)
         return self
 
-    def transform(self, rows):
+    def transform(self, filename, rows):
         rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
-        corpus = MyCorpus('../data/ItemInfo_train.csv', self.column, rows)
+        corpus = MyCorpus(filename, self.column, rows)
         X = self.tfidf_model.transform(corpus)
         ret = X[ix[:(len(ix)/2)]].multiply(X[ix[(len(ix)/2):]]).sum(1)
         if DEBUG:

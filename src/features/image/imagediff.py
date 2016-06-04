@@ -9,9 +9,9 @@ import imagehash
 HASH_SIZE = 8
 
 
-def diff_image_hash(rows):
+def diff_image_hash(filename, rows):
     rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
-    corpus = MyCorpus('../data/ItemInfo_train.csv', 4, rows)
+    corpus = MyCorpus(filename, 4, rows)
     hashes = [[] for _ in xrange(len(rows))]
     for i, text in enumerate(corpus):
         images = text.split(', ')
@@ -43,9 +43,9 @@ def diff_image_hash(rows):
     return diff
 
 
-def diff_image_count(rows):
+def diff_image_count(filename, rows):
     rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
-    corpus = MyCorpus('../data/ItemInfo_train.csv', 4, rows)
+    corpus = MyCorpus(filename, 4, rows)
     counts = np.zeros(len(rows))
     for i, text in enumerate(corpus):
         images = text.split(', ')

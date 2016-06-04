@@ -21,9 +21,9 @@ class Topics:
     def __init__(self, column):
         self.column = column
 
-    def fit(self, rows):
+    def fit(self, filename, rows):
         rows = np.unique(rows.flatten())
-        corpus = MyCorpus('../data/ItemInfo_train.csv', self.column, rows)
+        corpus = MyCorpus(filename, self.column, rows)
 
         self.bow_model = CountVectorizer(
             stop_words=stop_words, strip_accents='unicode',
@@ -42,9 +42,9 @@ class Topics:
                 print i, vocab[np.argsort(topic_dist)[:-10:-1]]
         return self
 
-    def transform(self, rows):
+    def transform(self, filename, rows):
         rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
-        corpus = MyCorpus('../data/ItemInfo_train.csv', self.column, rows)
+        corpus = MyCorpus(filename, self.column, rows)
         X = self.bow_model.transform(corpus)
         X = self.lda_model.transform(X)
         X1 = X[ix[:(len(ix)/2)]]

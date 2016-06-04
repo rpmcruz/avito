@@ -7,9 +7,9 @@ from utils.mycorpus import MyCorpus
 import numpy as np
 
 
-def diff_count(rows, column, count_fns):
+def diff_count(filename, rows, column, count_fns):
     rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
-    corpus = MyCorpus('../data/ItemInfo_train.csv', column, rows)
+    corpus = MyCorpus(filename, column, rows)
     # this cycle actually seems faster than list comprehension (I guess because
     # this uses numpy to store this big dataframe in memory)
     count = np.zeros((len(rows), len(count_fns)), int)
