@@ -43,7 +43,7 @@ class Terms:
             words1 = set(self.get_words(text1))
             words2 = set(self.get_words(text2))
             common = words1 & words2
-            den = min(len(words1), len(words2))
+            den = min(len(words1), len(words2))  # or max()?
             if den > 0:
                 ret[i] = len(common) / float(den)
             else:

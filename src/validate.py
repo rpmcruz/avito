@@ -31,13 +31,6 @@ else:
     info_ts = info_tr
 toc()
 
-myreader_tr = MyCSVReader(filename_tr)
-if filename_tr == filename_ts:
-    myreader_ts = myreader_tr
-else:
-    myreader_ts = MyCSVReader(filename_ts)
-toc()
-
 # NOTA: estou a ler apenas as primeiras N linhas
 pairs_tr = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
                          skip_header=1, usecols=(0, 1, 2))
@@ -128,6 +121,12 @@ def extract_attributes():
 
 
 def extract_text_expressions():
+    myreader_tr = MyCSVReader(filename_tr)
+    if filename_tr == filename_ts:
+        myreader_ts = myreader_tr
+    else:
+        myreader_ts = MyCSVReader(filename_ts)
+
     from features.text.expressions import StartsWith
     Xtr = StartsWith(3).transform(myreader_tr, lines_tr)
     Xts = StartsWith(3).transform(myreader_ts, lines_ts)
@@ -172,6 +171,12 @@ def extract_images_count():
 
 
 def extract_brands():
+    myreader_tr = MyCSVReader(filename_tr)
+    if filename_tr == filename_ts:
+        myreader_ts = myreader_tr
+    else:
+        myreader_ts = MyCSVReader(filename_ts)
+
     from features.text.terms import Brands
     tic()
     m1 = Brands(2)
@@ -186,6 +191,12 @@ def extract_brands():
 
 
 def extract_topics():
+    myreader_tr = MyCSVReader(filename_tr)
+    if filename_tr == filename_ts:
+        myreader_ts = myreader_tr
+    else:
+        myreader_ts = MyCSVReader(filename_ts)
+
     from features.text.terms import Topics
     tic()
     m = Topics(3)

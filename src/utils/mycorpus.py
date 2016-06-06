@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import csv
 
 
@@ -64,7 +65,6 @@ class MyCSVReader:
         self.file.close()
 
     def get_row(self, column, row):
-        self.file.seek(self.tells[row])
         self.file.seek(self.tells[row])
         reader = csv.reader(self.file, delimiter=',', quotechar='"')
         text = next(reader)[column]
