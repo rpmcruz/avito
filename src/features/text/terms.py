@@ -31,7 +31,9 @@ class Terms:
         return [word for word in text.split() if self.condition(word)]
 
     def transform(self, myreader, rows):
-        ret = np.zeros(len(rows), int)
+        # very odd: this being dtype=int or float does not seem to matter
+        # in other words, only same or different seem to matter
+        ret = np.zeros(len(rows))
         rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
 
         for i, (row1, row2) in enumerate(itertools.izip(
