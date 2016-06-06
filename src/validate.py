@@ -31,6 +31,13 @@ else:
     info_ts = info_tr
 toc()
 
+myreader_tr = MyCSVReader(filename_tr)
+if filename_tr == filename_ts:
+    myreader_ts = myreader_tr
+else:
+    myreader_ts = MyCSVReader(filename_ts)
+toc()
+
 # NOTA: estou a ler apenas as primeiras N linhas
 pairs_tr = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
                          skip_header=1, usecols=(0, 1, 2))
@@ -121,15 +128,12 @@ def extract_attributes():
 
 
 def extract_text_expressions():
-    myreader_tr = MyCSVReader(filename_tr)
-    if filename_tr == filename_ts:
-        myreader_ts = myreader_tr
-    else:
-        myreader_ts = MyCSVReader(filename_ts)
+    _myreader_tr = myreader_tr.copy()
+    _myreader_ts = myreader_ts.copy()
 
     from features.text.expressions import StartsWith
-    Xtr = StartsWith(3).transform(myreader_tr, lines_tr)
-    Xts = StartsWith(3).transform(myreader_ts, lines_ts)
+    Xtr = StartsWith(3).transform(_myreader_tr, lines_tr)
+    Xts = StartsWith(3).transform(_myreader_ts, lines_ts)
 
     names = ['common-start']
     toc('text expressions')
@@ -171,37 +175,31 @@ def extract_images_count():
 
 
 def extract_brands():
-    myreader_tr = MyCSVReader(filename_tr)
-    if filename_tr == filename_ts:
-        myreader_ts = myreader_tr
-    else:
-        myreader_ts = MyCSVReader(filename_ts)
+    _myreader_tr = myreader_tr.copy()
+    _myreader_ts = myreader_ts.copy()
 
     from features.text.terms import Brands
     tic()
     m1 = Brands(2)
-    Xtr1 = m1.transform(myreader_tr, lines_tr)
-    Xts1 = m1.transform(myreader_ts, lines_ts)
+    Xtr1 = m1.transform(_myreader_tr, lines_tr)
+    Xts1 = m1.transform(_myreader_ts, lines_ts)
     m2 = Brands(3)
-    Xtr2 = m2.transform(myreader_tr, lines_tr)
-    Xts2 = m2.transform(myreader_ts, lines_ts)
+    Xtr2 = m2.transform(_myreader_tr, lines_tr)
+    Xts2 = m2.transform(_myreader_ts, lines_ts)
     toc('brands')
     return ([Xtr1, Xtr2], [Xts1, Xts2],
             ['brands-title-dist', 'brands-descr-dist'])
 
 
 def extract_topics():
-    myreader_tr = MyCSVReader(filename_tr)
-    if filename_tr == filename_ts:
-        myreader_ts = myreader_tr
-    else:
-        myreader_ts = MyCSVReader(filename_ts)
+    _myreader_tr = myreader_tr.copy()
+    _myreader_ts = myreader_ts.copy()
 
     from features.text.terms import Topics
     tic()
     m = Topics(3)
-    Xtr = m.transform(myreader_tr, lines_tr)
-    Xts = m.transform(myreader_ts, lines_ts)
+    Xtr = m.transform(_myreader_tr, lines_tr)
+    Xts = m.transform(_myreader_ts, lines_ts)
     names = ['topic-dist']
     toc('topics')
     return ([Xtr], [Xts], names)
