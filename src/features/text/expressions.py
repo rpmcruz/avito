@@ -1,38 +1,39 @@
 # -*- coding: utf-8 -*-
 
-# Returns whether both texts have some expression in common.
-
-from utils.mycorpus import MyCorpus
 import numpy as np
+import itertools
 
-_symbols = ['*', '-', '+', '=', u'•', '1)', 'a)']
+'''
+most common code:
+http://stackoverflow.com/questions/1518522/python-most-common-element-in-a-list
+'''
 
 
-class Expressions:
+def most_common(lst):
+    return max(set(lst), key=lst.count)
+
+
+class StartsWith:
     def __init__(self, column):
         self.column = column
 
-    def transform(self, filename, rows, column):
-        rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
-        corpus = MyCorpus(filename, column, rows)
-        # this cycle actually seems faster than list comprehension (I guess because
-        # this uses numpy to store this big dataframe in memory)
-        has = np.zeros((len(rows), len(count_fns)), int)
-        for i, text in enumerate(corpus):
-            for j, fn in enumerate(count_fns):
-                has[i, j] = self.has_expression(text)
-        has1 = has[ix[:(len(ix)/2)]]
-        has2 = has[ix[(len(ix)/2):]]
-        return ((has1 + has2) == 2).astype(int)
-
-
-
-class Enumerations(Expressions):
-    def has_expression(self, text):
+    def get_most_frequent_start(self, text):
         lines = text.split('\n')
+        symbols = [line[:2] for line in lines]
+        return most_common(symbols)
 
-        for symbol in _symbols:
-            has = False
-            for line in lines:
-                _has = line.startswith(
+    def transform(self, myreader, rows):
+        ret = np.zeros(len(rows), int)
+        rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
 
+        for i, (row1, row2) in enumerate(itertools.izip(
+                rows[ix[:(len(ix)/2)]], rows[ix[(len(ix)/2):]])):
+            text1 = myreader.get_row(self.column, row1)
+            text2 = myreader.get_row(self.column, row2)
+            symbol1 = set(self.get_most_frequent_start(text1))
+            symbol2 = set(self.get_most_frequent_start(text2))
+            if symbol1 == symbol2:
+                ret[i] = 1
+            else:
+                ret[i] = 0
+        return ret

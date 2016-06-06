@@ -127,6 +127,16 @@ def extract_attributes():
     return (Xtr, Xts, attrbs)
 
 
+def extract_text_expressions():
+    from features.text.expressions import StartsWith
+    Xtr = StartsWith(3).transform(myreader_tr, lines_tr)
+    Xts = StartsWith(3).transform(myreader_ts, lines_ts)
+
+    names = ['common-start']
+    toc('text expressions')
+    return ([Xtr], [Xts], names)
+
+
 def extract_text_counts():
     from features.text.count import diff_count
     count_fns = [
@@ -204,11 +214,12 @@ pool = multiprocessing.Pool(4)
 res = [
     pool.apply_async(extract_images_hash),
     pool.apply_async(extract_topics),
+    pool.apply_async(extract_brands),
+    pool.apply_async(extract_text_expressions),
     pool.apply_async(extract_text_counts),
     pool.apply_async(extract_images_count),
     pool.apply_async(extract_categories),
     pool.apply_async(extract_attributes),
-    pool.apply_async(extract_brands),
 ]
 
 Xtr = []
@@ -274,7 +285,7 @@ else:
 
 if os.path.exists('/usr/bin/dot'):  # has graphviz installed?
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
-    m = DecisionTreeClassifier(min_samples_leaf=50)
+    m = DecisionTreeClassifier(min_samples_leaf=20)
     m.fit(Xtr, ytr)
     export_graphviz(m, feature_names=names,
                     class_names=['non-duplicate', 'duplicate'], label='none',
