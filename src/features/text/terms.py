@@ -43,9 +43,9 @@ class Terms:
             words1 = set(self.get_words(text1))
             words2 = set(self.get_words(text2))
             common = words1 & words2
-            _max = max(len(words1), len(words2))
-            if _max > 0:
-                ret[i] = len(common) / float(_max)
+            den = min(len(words1), len(words2))
+            if den > 0:
+                ret[i] = len(common) / float(den)
             else:
                 ret[i] = 0
         return ret
