@@ -5,6 +5,8 @@ sys.dont_write_bytecode = True
 import os
 import pandas as pd
 import numpy as np
+#np.random.seed(124)
+from utils.mycorpus import MyCSVReader
 from utils.tictoc import tic, toc
 
 FINAL_SUBMISSION = False
@@ -28,6 +30,14 @@ else:
     filename_ts = filename_tr
     info_ts = info_tr
 toc()
+
+myreader_tr = MyCSVReader(filename_tr)
+if filename_tr == filename_ts:
+    myreader_ts = myreader_tr
+else:
+    myreader_ts = MyCSVReader(filename_ts)
+toc()
+
 # NOTA: estou a ler apenas as primeiras N linhas
 pairs_tr = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
                          skip_header=1, usecols=(0, 1, 2))
@@ -37,7 +47,7 @@ if FINAL_SUBMISSION:
     ytr = pairs_tr[:, -1]
 else:
     pairs_tr = pairs_tr[  # undersample to speedup things
-        np.random.choice(np.arange(len(pairs_tr)), 1000, False)]
+        np.random.choice(np.arange(len(pairs_tr)), 5000, False)]
     # split train into train and test
     idx = np.arange(len(pairs_tr))
     np.random.shuffle(idx)
@@ -51,7 +61,6 @@ else:
 toc()
 
 # transforma ItemID em linhas do ficheiro CSV e da matriz info
-tic()
 lines_tr = np.asarray(
     [(info_tr.ix[i1]['line'], info_tr.ix[i2]['line'])
      for i1, i2, d in pairs_tr], int)
@@ -153,26 +162,26 @@ def extract_images_count():
 
 
 def extract_brands():
-    from features.text.brands import Brands
+    from features.text.terms import Brands
     tic()
-    m1 = Brands(2).fit(filename_tr, lines_tr)
-    Xtr1 = m1.transform(filename_tr, lines_tr)
-    Xts1 = m1.transform(filename_ts, lines_ts)
-    m2 = Brands(3).fit(filename_tr, lines_tr)
-    Xtr2 = m2.transform(filename_tr, lines_tr)
-    Xts2 = m2.transform(filename_ts, lines_ts)
+    m1 = Brands(2)
+    Xtr1 = m1.transform(myreader_tr, lines_tr)
+    Xts1 = m1.transform(myreader_ts, lines_ts)
+    m2 = Brands(3)
+    Xtr2 = m2.transform(myreader_tr, lines_tr)
+    Xts2 = m2.transform(myreader_ts, lines_ts)
     toc('brands')
-    return ([Xtr1, Xtr2], [Xts1, Xts2], ['brand-title', 'brand-descr'])
+    return ([Xtr1, Xtr2], [Xts1, Xts2],
+            ['brands-title-dist', 'brands-descr-dist'])
 
 
 def extract_topics():
-    from features.text.topics import Topics, NTOPICS
+    from features.text.terms import Topics
     tic()
-    m = Topics(3).fit(filename_tr, lines_tr)
-    Xtr = m.transform(filename_tr, lines_tr)
-    Xts = m.transform(filename_ts, lines_ts)
-    names = ['topic-%d' % i for i in xrange(NTOPICS)] + \
-        ['topic-dist-cos', 'topic-dist2']
+    m = Topics(3)
+    Xtr = m.transform(myreader_tr, lines_tr)
+    Xts = m.transform(myreader_ts, lines_ts)
+    names = ['topic-dist']
     toc('topics')
     return ([Xtr], [Xts], names)
 
@@ -190,7 +199,7 @@ def extract_images_hash():
         return ([], [], [])
 
 import multiprocessing
-pool = multiprocessing.Pool(2)
+pool = multiprocessing.Pool(4)
 
 res = [
     pool.apply_async(extract_images_hash),

@@ -20,7 +20,7 @@ from alphabet_detector import AlphabetDetector
 ad = AlphabetDetector()
 
 
-class Brands:
+class Terms:
     def __init__(self, column):
         self.column = column
 
@@ -29,9 +29,6 @@ class Brands:
         for ch in string.punctuation:
             text = text.replace(ch, '')
         return [word for word in text.split() if self.condition(word)]
-
-    def condition(self, word):
-        return ad.is_latin(word) or word in _colors
 
     def transform(self, myreader, rows):
         ret = np.zeros(len(rows), int)
@@ -52,7 +49,12 @@ class Brands:
         return ret
 
 
-class Topics(Brands):
+class Brands(Terms):
+    def condition(self, word):
+        return ad.is_latin(word) or word in _colors
+
+
+class Topics(Terms):
     def condition(self, word):
         return not ad.is_latin(word)
 
