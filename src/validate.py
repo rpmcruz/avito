@@ -76,13 +76,13 @@ print '== extract features =='
 
 
 def extract_categories():
+    tic()
     # Este encoding que eu faço aqui é por causa duma limitação do sklearn.
     # Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
     # categoria passa a ser um binário. Ele só funciona assim. Isto não é uma
     # limitação das árvores de decisão em teoria, mas é uma limitação do
     # sklearn.
     # Há outro software que podemos eventualmente usar que não precisa disto...
-    tic()
     from sklearn.preprocessing import OneHotEncoder
     # NOTE: all pairs belong to the same category: we only need to use one
     encoding = OneHotEncoder(dtype=int, sparse=False)
@@ -112,22 +112,28 @@ def extract_attributes():
     tic()
     Xtr = []
     Xts = []
-    attrbs = ('price', 'locationID', 'metroID', 'lat', 'lon')
-    for attr in attrbs:
-        a = info_tr.as_matrix([attr])[:, -1]
-        x = np.abs(a[lines_tr[:, 0]] - a[lines_tr[:, 1]])
+    # not using 'locationID' because it degrades performance
+    attrbs = ['price', 'metroID']
+    for X, info, lines in ((Xtr, info_tr, lines_tr), (Xts, info_ts, lines_ts)):
+        for attr in attrbs:
+            a = info.as_matrix([attr])[:, -1]
+            x = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
+            x[np.isnan(x)] = 10000  # NaN handling
+            X.append(x)
+        # lat, lon use euler distance
+        # using lat,lon individually degrades performance, but this metric
+        # seems to improve it slightly
+        l1 = info.as_matrix(['lon'])[:, -1]
+        l2 = info.as_matrix(['lat'])[:, -1]
+        x = (l1[lines[:, 0]] - l2[lines[:, 1]]) ** 2
         x[np.isnan(x)] = 10000  # NaN handling
-        Xtr.append(x)
-
-        a = info_ts.as_matrix([attr])[:, -1]
-        x = np.abs(a[lines_ts[:, 0]] - a[lines_ts[:, 1]])
-        x[np.isnan(x)] = 10000  # NaN handling
-        Xts.append(x)
+        X.append(x)
     toc('attributes')
-    return (Xtr, Xts, attrbs)
+    return (Xtr, Xts, attrbs + ['lon-lat'])
 
 
 def extract_text_expressions():
+    tic()
     _myreader_tr = myreader_tr.copy()
     _myreader_ts = myreader_ts.copy()
 
@@ -141,33 +147,36 @@ def extract_text_expressions():
 
 
 def extract_text_counts():
-    from features.text.count import diff_count
+    tic()
+    from features.text.count import diff_count, both_count
+    # symbols tested that were not useful: +, *, 1), a)
     count_fns = [
-        lambda text: text.count(','),
-        lambda text: text.count('.'),
-        lambda text: text.count('!'),
-        lambda text: text.count('-'),
-        lambda text: text.count('+'),
-        lambda text: text.count('*'),
-        lambda text: text.count('_'),
-        lambda text: text.count('1)'),
-        lambda text: text.count('a)'),
-        lambda text: text.count('='),
-        lambda text: text.count(u'•'),
-        lambda text: len(text),
+        lambda text: text.count('.'),  # 1
+        lambda text: text.count('!'),  # 2
+        lambda text: text.count('_'),  # 6
+        lambda text: text.count('='),  # 9
+        lambda text: text.count(u'•'),  # 10
+        lambda text: len(text),  # 11
     ]
-    Xtr = diff_count(filename_tr, lines_tr, 3, count_fns)
-    Xts = diff_count(filename_ts, lines_ts, 3, count_fns)
-
+    Xtr1 = diff_count(filename_tr, lines_tr, 3, count_fns)
+    Xts1 = diff_count(filename_ts, lines_ts, 3, count_fns)
     names = ['text-count-diff-%d' % i for i in xrange(len(count_fns))]
+
+    count_fns = [
+        lambda text: text.count(','),  # 0
+        lambda text: text.count('-'),  # 3
+    ]
+    Xtr2 = both_count(filename_tr, lines_tr, 3, count_fns)
+    Xts2 = both_count(filename_ts, lines_ts, 3, count_fns)
     names += ['text-count-both-%d' % i for i in xrange(len(count_fns))]
+
     toc('text counts')
-    return ([Xtr], [Xts], names)
+    return ([Xtr1, Xtr2], [Xts1, Xts2], names)
 
 
 def extract_images_count():
-    from features.image.imagediff import diff_image_count
     tic()
+    from features.image.imagediff import diff_image_count
     Xtr = diff_image_count(filename_tr, lines_tr)
     Xts = diff_image_count(filename_ts, lines_ts)
     toc('images count')
@@ -175,11 +184,11 @@ def extract_images_count():
 
 
 def extract_brands():
+    tic()
     _myreader_tr = myreader_tr.copy()
     _myreader_ts = myreader_ts.copy()
 
     from features.text.terms import Brands
-    tic()
     m1 = Brands(2)
     Xtr1 = m1.transform(_myreader_tr, lines_tr)
     Xts1 = m1.transform(_myreader_ts, lines_ts)
@@ -192,11 +201,11 @@ def extract_brands():
 
 
 def extract_topics():
+    tic()
     _myreader_tr = myreader_tr.copy()
     _myreader_ts = myreader_ts.copy()
 
     from features.text.terms import Topics
-    tic()
     m = Topics(3)
     Xtr = m.transform(_myreader_tr, lines_tr)
     Xts = m.transform(_myreader_ts, lines_ts)
@@ -239,6 +248,7 @@ for r in res:
     Xtr += _Xtr
     Xts += _Xts
     names += _names
+
 for i in xrange(len(Xtr)):  # ensure all are matrices
     if len(Xtr[i].shape) == 1:
         Xtr[i] = np.vstack(Xtr[i])
@@ -262,7 +272,7 @@ def kaggle_score(m, X, y):
 tic()
 m = RandomForestClassifier(250)
 # find a better max_depth if you can...
-m = GridSearchCV(m, {'max_depth': range(23, 29+1)}, kaggle_score, n_jobs=-1)
+m = GridSearchCV(m, {'max_depth': range(15, 28+1)}, kaggle_score, n_jobs=-1)
 m.fit(Xtr, ytr)
 toc()
 pp = m.predict_proba(Xts)[:, 1]
@@ -292,7 +302,7 @@ else:
     print
     print 'kaggle score:', roc_auc_score(yts, pp)
 
-if os.path.exists('/usr/bin/dot'):  # has graphviz installed?
+if os.path.exists('/usr/bin/dot'):  # is graphviz installed?
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
     m = DecisionTreeClassifier(min_samples_leaf=20)
     m.fit(Xtr, ytr)
