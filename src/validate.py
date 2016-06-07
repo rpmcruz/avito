@@ -5,9 +5,11 @@ sys.dont_write_bytecode = True
 import os
 import pandas as pd
 import numpy as np
-#np.random.seed(124)
 from utils.mycorpus import MyCSVReader
 from utils.tictoc import tic, toc
+
+N = 1000
+#np.random.seed(124)
 
 FINAL_SUBMISSION = False
 
@@ -47,12 +49,12 @@ if FINAL_SUBMISSION:
     ytr = pairs_tr[:, -1]
 else:
     pairs_tr = pairs_tr[  # undersample to speedup things
-        np.random.choice(np.arange(len(pairs_tr)), 5000, False)]
+        np.random.choice(np.arange(len(pairs_tr)), N, False)]
     # split train into train and test
     idx = np.arange(len(pairs_tr))
     np.random.shuffle(idx)
-    tr = idx[:int(0.60*len(pairs_tr))]
-    ts = idx[int(0.60*len(pairs_tr)):]
+    tr = idx[:int(0.40*len(pairs_tr))]
+    ts = idx[int(0.40*len(pairs_tr)):]
     pairs_ts = pairs_tr[ts]
     pairs_tr = pairs_tr[tr]
     ytr = pairs_tr[:, -1]
@@ -214,6 +216,20 @@ def extract_topics():
     return ([Xtr], [Xts], names)
 
 
+def extract_json():
+    tic()
+    _myreader_tr = myreader_tr.copy()
+    _myreader_ts = myreader_ts.copy()
+
+    from features.text.json import MyJSON
+    m = MyJSON()
+    Xtr = m.transform(_myreader_tr, lines_tr)
+    Xts = m.transform(_myreader_ts, lines_ts)
+    names = ['json-dist']
+    toc('json')
+    return ([Xtr], [Xts], names)
+
+
 def extract_images_hash():
     if os.path.exists('../data/images/Images_9'):
         from features.image.imagediff import diff_image_hash
@@ -233,6 +249,7 @@ res = [
     pool.apply_async(extract_images_hash),
     pool.apply_async(extract_topics),
     pool.apply_async(extract_brands),
+    pool.apply_async(extract_json),
     pool.apply_async(extract_text_expressions),
     pool.apply_async(extract_text_counts),
     pool.apply_async(extract_images_count),
