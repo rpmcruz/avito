@@ -32,14 +32,14 @@ if FINAL_SUBMISSION:
 else:
     filename_ts = filename_tr
     info_ts = info_tr
-toc()
+toc('item info')
 
 myreader_tr = MyCSVReader(filename_tr)
 if filename_tr == filename_ts:
     myreader_ts = myreader_tr
 else:
     myreader_ts = MyCSVReader(filename_ts)
-toc()
+toc('lines to seek')
 
 # NOTA: estou a ler apenas as primeiras N linhas
 pairs_tr = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
@@ -61,7 +61,7 @@ else:
     ytr = pairs_tr[:, -1]
     yts = pairs_ts[:, -1]
     pairs_ts = pairs_ts[:, :-1]  # drop dups
-toc()
+toc('pairs')
 
 # transforma ItemID em linhas do ficheiro CSV e da matriz info
 lines_tr = np.asarray(
@@ -70,7 +70,7 @@ lines_tr = np.asarray(
 lines_ts = np.asarray(
     [(info_ts.ix[i1]['line'], info_ts.ix[i2]['line'])
      for i1, i2 in pairs_ts], int)
-toc()
+toc('pairs to lines')
 
 print '== extract features =='
 
@@ -86,6 +86,7 @@ def extract_categories():
     # limitação das árvores de decisão em teoria, mas é uma limitação do
     # sklearn.
     # Há outro software que podemos eventualmente usar que não precisa disto...
+    # O xgboost tb não suporta categóricas.
 
     from sklearn.preprocessing import OneHotEncoder
     # NOTE: all pairs belong to the same category: we only need to use one
@@ -107,10 +108,8 @@ def extract_categories():
     parents01_ts = encoding.transform(parents_ts)
 
     from utils.categorias import categorias
-    names = [r'\"' + categorias[i].encode('utf8') + r'\"'
-             for i in np.unique(all_categories)]
-    names += [r'\"' + categorias[i].encode('utf8') + r'\"'
-              for i in np.unique(all_parents)]
+    names = [categorias[i] for i in np.unique(all_categories)]
+    names += [categorias[i] for i in np.unique(all_parents)]
     toc('categories')
     return ([categories01_tr, parents01_tr], [categories01_ts, parents01_ts],
             names)
@@ -284,23 +283,94 @@ assert Xtr.shape[1] == len(names)
 
 print '== model =='
 
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.grid_search import GridSearchCV
+USE_XGBOOST = True
 
+if USE_XGBOOST:
+    import xgboost as xgb
 
-def kaggle_score(m, X, y):
-    return roc_auc_score(y, m.predict_proba(X)[:, 1])
+    # TODO:
+    # - see if applying weights improves AUC since datset is imbalance
+    #   (see scale_pos_weight)
+    # - reg_alpha and reg_lambda might be interesting parameters
+    # - see early_stopping
 
-tic()
-m = RandomForestClassifier(250)
-# find a better max_depth if you can...
-m = GridSearchCV(m, {'max_depth': range(15, 28+1)}, kaggle_score, n_jobs=-1)
-m.fit(Xtr, ytr)
-toc()
-pp = m.predict_proba(Xts)[:, 1]
-yp = pp >= 0.5
-toc()
+    # see parameters here:
+    # https://github.com/dmlc/xgboost/blob/master/doc/parameter.md
+    params = {
+        'objective': 'binary:logistic', 'eval_metric': 'auc', 'max_depth': 22,
+        'eta': 0.3, 'subsample': 0.6,
+        'colsample_bytree': 0.2, 'silent': 0,
+    }
+
+    # xgboost does not like spaces in feature_names
+    names = [name.replace(' ', '-') for name in names]
+
+    # grid search
+    from sklearn.cross_validation import StratifiedKFold
+    from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
+
+    best_max_depth = 0
+    best_score = 0
+    FOLDS = 3
+
+    tic()
+    for max_depth in xrange(5, 20+1):
+        score = 0
+        for tr, ts in StratifiedKFold(ytr, FOLDS):
+            xgb_tr = xgb.DMatrix(Xtr[tr], ytr[tr])
+            xgb_ts = xgb.DMatrix(Xtr[ts])
+            params['max_depth'] = max_depth
+            m = xgb.train(params, xgb_tr, 250)
+            pp = m.predict(xgb_ts)
+            score += roc_auc_score(ytr[ts], pp) / float(FOLDS)
+        if score > best_score:
+            best_score = score
+            best_max_depth = max_depth
+    toc('grid search')
+
+    print 'best max_depth: %6d' % best_max_depth
+    params['max_depth'] = best_max_depth
+
+    xgb_tr = xgb.DMatrix(Xtr, ytr, feature_names=names)
+    xgb_ts = xgb.DMatrix(Xts, feature_names=names)
+
+    m = xgb.train(params, xgb_tr, 260, verbose_eval=True)
+    toc('final model')
+
+    pp = m.predict(xgb_ts)
+    yp = pp >= 0.5
+    toc('predictions')
+
+    xgb.plot_importance(m)
+    xgb.plot_tree(m)
+
+else:  # sklearn RandomForest code
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.grid_search import GridSearchCV
+
+    def kaggle_score(m, X, y):
+        return roc_auc_score(y, m.predict_proba(X)[:, 1])
+
+    tic()
+    m = RandomForestClassifier(250)
+    # find a better max_depth if you can...
+    m = GridSearchCV(m, {'max_depth': range(15, 28+1)}, kaggle_score,
+                     n_jobs=-1)
+    m.fit(Xtr, ytr)
+    toc('train')
+    pp = m.predict_proba(Xts)[:, 1]
+    yp = pp >= 0.5
+    toc('prediction')
+
+    if os.path.exists('/usr/bin/dot'):  # is graphviz installed?
+        from sklearn.tree import DecisionTreeClassifier, export_graphviz
+        m = DecisionTreeClassifier(min_samples_leaf=20)
+        m.fit(Xtr, ytr)
+        export_graphviz(m, feature_names=names,
+                        class_names=['non-duplicate', 'duplicate'],
+                        label='none', impurity=False, filled=True)
+        os.system('dot -Tpdf tree.dot -o tree.pdf')  # compile dot file
+        os.remove('tree.dot')
 
 if FINAL_SUBMISSION:
     import datetime
@@ -309,9 +379,6 @@ if FINAL_SUBMISSION:
     np.savetxt('../out/vilab-submission-%s.csv' % timestamp, scores,
                delimiter=',', header='id,probability', comments='')
 else:
-    print 'best params:', m.best_params_
-    print
-
     print 'baseline: %.4f' % (np.sum(yts == 0)/float(len(ts)))
     print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (1, 0, 1, 0)
     print
@@ -324,13 +391,3 @@ else:
 
     print
     print 'kaggle score:', roc_auc_score(yts, pp)
-
-if os.path.exists('/usr/bin/dot'):  # is graphviz installed?
-    from sklearn.tree import DecisionTreeClassifier, export_graphviz
-    m = DecisionTreeClassifier(min_samples_leaf=20)
-    m.fit(Xtr, ytr)
-    export_graphviz(m, feature_names=names,
-                    class_names=['non-duplicate', 'duplicate'], label='none',
-                    impurity=False, filled=True)
-    os.system('dot -Tpdf tree.dot -o tree.pdf')  # compile dot file
-    os.remove('tree.dot')
