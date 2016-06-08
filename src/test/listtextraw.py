@@ -7,11 +7,11 @@ import numpy as np
 
 FIELD = 'images_array'
 
-info = pd.read_csv('../data/ItemInfo_train.csv', dtype={'itemID': int},
+info = pd.read_csv('../../data/ItemInfo_train.csv', dtype={'itemID': int},
                    usecols=(0, 1, 2, 4, 5), index_col=0)
 
 # NOTA: estou a ler apenas as primeiras N linhas
-pairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
+pairs = np.genfromtxt('../../data/ItemPairs_train.csv', int, delimiter=',',
                       skip_header=1, usecols=(0, 1, 2))
 pairs = pairs[np.random.choice(np.arange(len(pairs)), 50, False)]
 
