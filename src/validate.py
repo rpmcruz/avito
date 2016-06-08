@@ -283,7 +283,7 @@ assert Xtr.shape[1] == len(names)
 
 print '== model =='
 
-USE_XGBOOST = True
+USE_XGBOOST = False
 
 if USE_XGBOOST:
     import xgboost as xgb
@@ -326,10 +326,9 @@ if USE_XGBOOST:
         if score > best_score:
             best_score = score
             best_max_depth = max_depth
-    toc('grid search')
-
     print 'best max_depth: %6d' % best_max_depth
     params['max_depth'] = best_max_depth
+    toc('grid search')
 
     xgb_tr = xgb.DMatrix(Xtr, ytr, feature_names=names)
     xgb_ts = xgb.DMatrix(Xts, feature_names=names)
@@ -357,6 +356,7 @@ else:  # sklearn RandomForest code
     m = GridSearchCV(m, {'max_depth': range(15, 28+1)}, kaggle_score,
                      n_jobs=-1)
     m.fit(Xtr, ytr)
+    print 'best params:', m.best_params_
     toc('train')
     pp = m.predict_proba(Xts)[:, 1]
     yp = pp >= 0.5
