@@ -85,26 +85,31 @@ def extract_categories():
     # limitação das árvores de decisão em teoria, mas é uma limitação do
     # sklearn.
     # Há outro software que podemos eventualmente usar que não precisa disto...
+
     from sklearn.preprocessing import OneHotEncoder
     # NOTE: all pairs belong to the same category: we only need to use one
     encoding = OneHotEncoder(dtype=int, sparse=False)
     categories_tr = info_tr.iloc[lines_tr[:, 0]].as_matrix(['categoryID'])
     categories_ts = info_ts.iloc[lines_ts[:, 0]].as_matrix(['categoryID'])
-    categories01_tr = encoding.fit_transform(categories_tr)
+    all_categories = np.r_[categories_tr, categories_ts]
+    encoding.fit(all_categories)
+    categories01_tr = encoding.transform(categories_tr)
     categories01_ts = encoding.transform(categories_ts)
 
     df = pd.read_csv('../data/Category.csv', dtype=int, index_col=0)
     encoding = OneHotEncoder(dtype=int, sparse=False)
     parents_tr = df.ix[categories_tr[:, -1]].as_matrix(['parentCategoryID'])
     parents_ts = df.ix[categories_ts[:, -1]].as_matrix(['parentCategoryID'])
-    parents01_tr = encoding.fit_transform(parents_tr)
+    all_parents = np.r_[parents_tr, parents_ts]
+    encoding.fit(all_parents)
+    parents01_tr = encoding.transform(parents_tr)
     parents01_ts = encoding.transform(parents_ts)
 
     from utils.categorias import categorias
     names = [r'\"' + categorias[i].encode('utf8') + r'\"'
-             for i in np.unique(categories_tr)]
+             for i in np.unique(all_categories)]
     names += [r'\"' + categorias[i].encode('utf8') + r'\"'
-              for i in np.unique(parents_tr)]
+              for i in np.unique(all_parents)]
     toc('categories')
     return ([categories01_tr, parents01_tr], [categories01_ts, parents01_ts],
             names)
