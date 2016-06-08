@@ -17,18 +17,21 @@ def diff_image_hash(filename, rows):
         images = text.split(', ')
         if images != ['']:
             for image in images:
-                dirname = image[-1]
-                if image[-2] != '0':
-                    dirname = image[-2] + dirname
-                filename = '../data/images/Images_%s/%s/%s.jpg' % (
-                    image[-2], dirname, image.lstrip('0'))
-                try:
-                    img = Image.open(filename)
-                except IOError as ex:
-                    print ex, filename
-                else:
-                    h = imagehash.dhash(img, HASH_SIZE)
-                    hashes[i].append(h)
+                # In InfoTest, there is a weird bug where an entry imagename is
+                # only '7' -- filter small "image names"
+                if len(image) > 3:
+                    dirname = image[-1]
+                    if image[-2] != '0':
+                        dirname = image[-2] + dirname
+                    filename = '../data/images/Images_%s/%s/%s.jpg' % (
+                        image[-2], dirname, image.lstrip('0'))
+                    try:
+                        img = Image.open(filename)
+                    except IOError as ex:
+                        print ex, filename
+                    else:
+                        h = imagehash.dhash(img, HASH_SIZE)
+                        hashes[i].append(h)
     diff = np.ones(len(ix)/2, int)*10000
     for i, (ix1, ix2) in enumerate(
             itertools.izip(ix[:(len(ix)/2)], ix[(len(ix)/2):])):
