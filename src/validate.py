@@ -375,9 +375,9 @@ else:  # sklearn RandomForest code
 if FINAL_SUBMISSION:
     import datetime
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M')
-    scores = np.c_[np.arange(pp), pp]
+    scores = np.c_[np.arange(len(pp)), pp]
     np.savetxt('../out/vilab-submission-%s.csv' % timestamp, scores,
-               delimiter=',', header='id,probability', comments='')
+               '%d,%.8f', ',', header='id,probability', comments='')
 else:
     print 'baseline: %.4f' % (np.sum(yts == 0)/float(len(ts)))
     print 'y=0 | TN=%.2f | FP=%.2f |\ny=1 | FN=%.2f | TP=%.2f |' % (1, 0, 1, 0)
