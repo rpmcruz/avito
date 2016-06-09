@@ -10,12 +10,12 @@ plt.ioff()
 from PIL import Image
 import imagehash
 
-pairs = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
+pairs = np.genfromtxt('../../data/ItemPairs_train.csv', int, delimiter=',',
                       skip_header=1, usecols=(0, 1, 2))
 # shuffle
 pairs = pairs[np.random.choice(np.arange(len(pairs)), 20, False)]
 
-info = pd.read_csv('../data/ItemInfo_train.csv', dtype={'itemID': int},
+info = pd.read_csv('../../data/ItemInfo_train.csv', dtype={'itemID': int},
                    usecols=(0, 2, 4), index_col=0)
 
 hashes_fn = [
@@ -52,7 +52,7 @@ for i1, i2, dup in pairs:
                     dirname = image[-1]
                     if image[-2] != '0':
                         dirname = image[-2] + dirname
-                    filename = '../data/images/Images_%s/%s/%s.jpg' % (
+                    filename = '../../data/images/Images_%s/%s/%s.jpg' % (
                         image[-2], dirname, image.lstrip('0'))
 
                     img = Image.open(filename)

@@ -1,4 +1,5 @@
-/src/tree.pdf
+/src/*.pdf
 /data
+/out
 *.pyc
 *.pickle
