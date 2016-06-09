@@ -9,7 +9,7 @@ import numpy as np
 from utils.mycorpus import MyCSVReader
 from utils.tictoc import tic, toc
 
-N = 1000
+N = 5000
 #np.random.seed(124)
 
 FINAL_SUBMISSION = False
@@ -282,6 +282,7 @@ assert Xtr.shape[1] == len(names)
 # create model and validate
 
 print '== model =='
+from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 
 USE_XGBOOST = False
 
@@ -307,7 +308,6 @@ if USE_XGBOOST:
 
     # grid search
     from sklearn.cross_validation import StratifiedKFold
-    from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
 
     best_max_depth = 0
     best_score = 0
