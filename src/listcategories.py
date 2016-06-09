@@ -15,7 +15,7 @@ def translate(text):
 
 
 import pandas as pd
-Xinfo = pd.read_csv('../../data/ItemInfo_train.csv')
+Xinfo = pd.read_csv('../data/ItemInfo_train.csv')
 
 for i in Xinfo['categoryID'].unique():
     items = Xinfo[Xinfo['categoryID'] == i]

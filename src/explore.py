@@ -11,12 +11,12 @@ from scipy import stats
 
 print 'load items info...'
 tic()
-Xinfo = pd.read_csv('../../data/ItemInfo_train.csv', index_col=0,
+Xinfo = pd.read_csv('../data/ItemInfo_train.csv', index_col=0,
                     usecols=[0, 1, 6, 7, 8, 9, 10])
 toc()
 print 'load items pairs...'
 tic()
-Xpair = pd.read_csv('../../data/ItemPairs_train.csv', usecols=[0, 1, 2])
+Xpair = pd.read_csv('../data/ItemPairs_train.csv', usecols=[0, 1, 2])
 toc()
 
 # idxmap is an efficient mapping between item-id and row index

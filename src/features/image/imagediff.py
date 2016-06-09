@@ -18,14 +18,10 @@ def diff_image_hash(filename, rows):
         if images != ['']:
             for image in images:
                 dirname = image[-1]
-                if len(image) == 1:
-                    dir2name = '0'
-                else:
-                    dir2name = image[-2]
-                    if dir2name != '0':
-                        dirname = dir2name + dirname
+                if image[-2] != '0':
+                    dirname = image[-2] + dirname
                 filename = '../data/images/Images_%s/%s/%s.jpg' % (
-                    dir2name, dirname, image.lstrip('0'))
+                    image[-2], dirname, image.lstrip('0'))
                 try:
                     img = Image.open(filename)
                 except IOError as ex:
