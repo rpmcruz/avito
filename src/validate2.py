@@ -8,7 +8,7 @@ import numpy as np
 from utils.mycorpus import MyCSVReader
 from utils.tictoc import tic, toc
 
-FINAL_SUBMISSION = True
+FINAL_SUBMISSION = False
 
 print '== load =='
 

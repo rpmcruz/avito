@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import csv
-import copy
 
 
 class MyCorpus:
@@ -35,7 +34,6 @@ class MyCSVReader:
     # corresponds to one CSV item and so may encompass several lines.
 
     def __init__(self, csv_filename):
-        self.csv_filename = csv_filename
         self.file = open(csv_filename, 'rb')
 
         # csv.reader only provides reliable line numbers; because it reads
@@ -65,17 +63,8 @@ class MyCSVReader:
     def __del__(self):
         self.file.close()
 
-    # There are concurrency problems with re-using the same file descriptor,
-    # since they are global -- use copy() to create a new file descriptor --
-    # which the only way, because dup() does not do that, see:
-    # http://stackoverflow.com/questions/37666760/python-concurrent-file-seek
-
-    def copy(self):
-        other = copy.copy(self)
-        other.file = open(self.csv_filename, 'rb')
-        return other
-
     def get_row(self, column, row):
+        self.file.seek(self.tells[row])
         self.file.seek(self.tells[row])
         reader = csv.reader(self.file, delimiter=',', quotechar='"')
         text = next(reader)[column]

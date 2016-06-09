@@ -5,13 +5,9 @@ sys.dont_write_bytecode = True
 import os
 import pandas as pd
 import numpy as np
-from utils.mycorpus import MyCSVReader
 from utils.tictoc import tic, toc
 
-N = 5000
-#np.random.seed(124)
-
-FINAL_SUBMISSION = True
+FINAL_SUBMISSION = False
 
 print '== load =='
 
@@ -32,14 +28,6 @@ else:
     filename_ts = filename_tr
     info_ts = info_tr
 toc()
-
-myreader_tr = MyCSVReader(filename_tr)
-if filename_tr == filename_ts:
-    myreader_ts = myreader_tr
-else:
-    myreader_ts = MyCSVReader(filename_ts)
-toc()
-
 # NOTA: estou a ler apenas as primeiras N linhas
 pairs_tr = np.genfromtxt('../data/ItemPairs_train.csv', int, delimiter=',',
                          skip_header=1, usecols=(0, 1, 2))
@@ -49,12 +37,12 @@ if FINAL_SUBMISSION:
     ytr = pairs_tr[:, -1]
 else:
     pairs_tr = pairs_tr[  # undersample to speedup things
-        np.random.choice(np.arange(len(pairs_tr)), N, False)]
+        np.random.choice(np.arange(len(pairs_tr)), 1000, False)]
     # split train into train and test
     idx = np.arange(len(pairs_tr))
     np.random.shuffle(idx)
-    tr = idx[:int(0.40*len(pairs_tr))]
-    ts = idx[int(0.40*len(pairs_tr)):]
+    tr = idx[:int(0.60*len(pairs_tr))]
+    ts = idx[int(0.60*len(pairs_tr)):]
     pairs_ts = pairs_tr[ts]
     pairs_tr = pairs_tr[tr]
     ytr = pairs_tr[:, -1]
@@ -63,6 +51,7 @@ else:
 toc()
 
 # transforma ItemID em linhas do ficheiro CSV e da matriz info
+tic()
 lines_tr = np.asarray(
     [(info_tr.ix[i1]['line'], info_tr.ix[i2]['line'])
      for i1, i2, d in pairs_tr], int)
@@ -78,13 +67,13 @@ print '== extract features =='
 
 
 def extract_categories():
-    tic()
     # Este encoding que eu faço aqui é por causa duma limitação do sklearn.
     # Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
     # categoria passa a ser um binário. Ele só funciona assim. Isto não é uma
     # limitação das árvores de decisão em teoria, mas é uma limitação do
     # sklearn.
     # Há outro software que podemos eventualmente usar que não precisa disto...
+    tic()
     from sklearn.preprocessing import OneHotEncoder
     # NOTE: all pairs belong to the same category: we only need to use one
     encoding = OneHotEncoder(dtype=int, sparse=False)
@@ -114,71 +103,49 @@ def extract_attributes():
     tic()
     Xtr = []
     Xts = []
-    # not using 'locationID' because it degrades performance
-    attrbs = ['price', 'metroID']
-    for X, info, lines in ((Xtr, info_tr, lines_tr), (Xts, info_ts, lines_ts)):
-        for attr in attrbs:
-            a = info.as_matrix([attr])[:, -1]
-            x = np.abs(a[lines[:, 0]] - a[lines[:, 1]])
-            x[np.isnan(x)] = 10000  # NaN handling
-            X.append(x)
-        # lat, lon use euler distance
-        # using lat,lon individually degrades performance, but this metric
-        # seems to improve it slightly
-        l1 = info.as_matrix(['lon'])[:, -1]
-        l2 = info.as_matrix(['lat'])[:, -1]
-        x = (l1[lines[:, 0]] - l2[lines[:, 1]]) ** 2
+    attrbs = ('price', 'locationID', 'metroID', 'lat', 'lon')
+    for attr in attrbs:
+        a = info_tr.as_matrix([attr])[:, -1]
+        x = np.abs(a[lines_tr[:, 0]] - a[lines_tr[:, 1]])
         x[np.isnan(x)] = 10000  # NaN handling
-        X.append(x)
+        Xtr.append(x)
+
+        a = info_ts.as_matrix([attr])[:, -1]
+        x = np.abs(a[lines_ts[:, 0]] - a[lines_ts[:, 1]])
+        x[np.isnan(x)] = 10000  # NaN handling
+        Xts.append(x)
     toc('attributes')
-    return (Xtr, Xts, attrbs + ['lon-lat'])
-
-
-def extract_text_expressions():
-    tic()
-    _myreader_tr = myreader_tr.copy()
-    _myreader_ts = myreader_ts.copy()
-
-    from features.text.expressions import StartsWith
-    Xtr = StartsWith(3).transform(_myreader_tr, lines_tr)
-    Xts = StartsWith(3).transform(_myreader_ts, lines_ts)
-
-    names = ['common-start']
-    toc('text expressions')
-    return ([Xtr], [Xts], names)
+    return (Xtr, Xts, attrbs)
 
 
 def extract_text_counts():
-    tic()
-    from features.text.count import diff_count, both_count
-    # symbols tested that were not useful: +, *, 1), a)
+    from features.text.count import diff_count
     count_fns = [
-        lambda text: text.count('.'),  # 1
-        lambda text: text.count('!'),  # 2
-        lambda text: text.count('_'),  # 6
-        lambda text: text.count('='),  # 9
-        lambda text: text.count(u'•'),  # 10
-        lambda text: len(text),  # 11
+        lambda text: text.count(','),
+        lambda text: text.count('.'),
+        lambda text: text.count('!'),
+        lambda text: text.count('-'),
+        lambda text: text.count('+'),
+        lambda text: text.count('*'),
+        lambda text: text.count('_'),
+        lambda text: text.count('1)'),
+        lambda text: text.count('a)'),
+        lambda text: text.count('='),
+        lambda text: text.count(u'•'),
+        lambda text: len(text),
     ]
-    Xtr1 = diff_count(filename_tr, lines_tr, 3, count_fns)
-    Xts1 = diff_count(filename_ts, lines_ts, 3, count_fns)
+    Xtr = diff_count(filename_tr, lines_tr, 3, count_fns)
+    Xts = diff_count(filename_ts, lines_ts, 3, count_fns)
+
     names = ['text-count-diff-%d' % i for i in xrange(len(count_fns))]
-
-    count_fns = [
-        lambda text: text.count(','),  # 0
-        lambda text: text.count('-'),  # 3
-    ]
-    Xtr2 = both_count(filename_tr, lines_tr, 3, count_fns)
-    Xts2 = both_count(filename_ts, lines_ts, 3, count_fns)
     names += ['text-count-both-%d' % i for i in xrange(len(count_fns))]
-
     toc('text counts')
-    return ([Xtr1, Xtr2], [Xts1, Xts2], names)
+    return ([Xtr], [Xts], names)
 
 
 def extract_images_count():
-    tic()
     from features.image.imagediff import diff_image_count
+    tic()
     Xtr = diff_image_count(filename_tr, lines_tr)
     Xts = diff_image_count(filename_ts, lines_ts)
     toc('images count')
@@ -186,47 +153,27 @@ def extract_images_count():
 
 
 def extract_brands():
+    from features.text.brands import Brands
     tic()
-    _myreader_tr = myreader_tr.copy()
-    _myreader_ts = myreader_ts.copy()
-
-    from features.text.terms import Brands
-    m1 = Brands(2)
-    Xtr1 = m1.transform(_myreader_tr, lines_tr)
-    Xts1 = m1.transform(_myreader_ts, lines_ts)
-    m2 = Brands(3)
-    Xtr2 = m2.transform(_myreader_tr, lines_tr)
-    Xts2 = m2.transform(_myreader_ts, lines_ts)
+    m1 = Brands(2).fit(filename_tr, lines_tr)
+    Xtr1 = m1.transform(filename_tr, lines_tr)
+    Xts1 = m1.transform(filename_ts, lines_ts)
+    m2 = Brands(3).fit(filename_tr, lines_tr)
+    Xtr2 = m2.transform(filename_tr, lines_tr)
+    Xts2 = m2.transform(filename_ts, lines_ts)
     toc('brands')
-    return ([Xtr1, Xtr2], [Xts1, Xts2],
-            ['brands-title-dist', 'brands-descr-dist'])
+    return ([Xtr1, Xtr2], [Xts1, Xts2], ['brand-title', 'brand-descr'])
 
 
 def extract_topics():
+    from features.text.topics import Topics, NTOPICS
     tic()
-    _myreader_tr = myreader_tr.copy()
-    _myreader_ts = myreader_ts.copy()
-
-    from features.text.terms import Topics
-    m = Topics(3)
-    Xtr = m.transform(_myreader_tr, lines_tr)
-    Xts = m.transform(_myreader_ts, lines_ts)
-    names = ['topic-dist']
+    m = Topics(3).fit(filename_tr, lines_tr)
+    Xtr = m.transform(filename_tr, lines_tr)
+    Xts = m.transform(filename_ts, lines_ts)
+    names = ['topic-%d' % i for i in xrange(NTOPICS)] + \
+        ['topic-dist-cos', 'topic-dist2']
     toc('topics')
-    return ([Xtr], [Xts], names)
-
-
-def extract_json():
-    tic()
-    _myreader_tr = myreader_tr.copy()
-    _myreader_ts = myreader_ts.copy()
-
-    from features.text.json import MyJSON
-    m = MyJSON()
-    Xtr = m.transform(_myreader_tr, lines_tr)
-    Xts = m.transform(_myreader_ts, lines_ts)
-    names = ['json-dist']
-    toc('json')
     return ([Xtr], [Xts], names)
 
 
@@ -243,18 +190,16 @@ def extract_images_hash():
         return ([], [], [])
 
 import multiprocessing
-pool = multiprocessing.Pool(4)
+pool = multiprocessing.Pool(2)
 
 res = [
     pool.apply_async(extract_images_hash),
     pool.apply_async(extract_topics),
-    pool.apply_async(extract_brands),
-    pool.apply_async(extract_json),
-    pool.apply_async(extract_text_expressions),
     pool.apply_async(extract_text_counts),
     pool.apply_async(extract_images_count),
     pool.apply_async(extract_categories),
     pool.apply_async(extract_attributes),
+    pool.apply_async(extract_brands),
 ]
 
 Xtr = []
@@ -265,7 +210,6 @@ for r in res:
     Xtr += _Xtr
     Xts += _Xts
     names += _names
-
 for i in xrange(len(Xtr)):  # ensure all are matrices
     if len(Xtr[i].shape) == 1:
         Xtr[i] = np.vstack(Xtr[i])
@@ -287,9 +231,9 @@ def kaggle_score(m, X, y):
     return roc_auc_score(y, m.predict_proba(X)[:, 1])
 
 tic()
-m = RandomForestClassifier(400)
+m = RandomForestClassifier(250)
 # find a better max_depth if you can...
-m = GridSearchCV(m, {'max_depth': range(15, 28+1)}, kaggle_score, n_jobs=-1)
+m = GridSearchCV(m, {'max_depth': range(23, 29+1)}, kaggle_score, n_jobs=-1)
 m.fit(Xtr, ytr)
 toc()
 pp = m.predict_proba(Xts)[:, 1]
@@ -319,9 +263,9 @@ else:
     print
     print 'kaggle score:', roc_auc_score(yts, pp)
 
-if os.path.exists('/usr/bin/dot'):  # is graphviz installed?
+if os.path.exists('/usr/bin/dot'):  # has graphviz installed?
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
-    m = DecisionTreeClassifier(min_samples_leaf=20)
+    m = DecisionTreeClassifier(min_samples_leaf=50)
     m.fit(Xtr, ytr)
     export_graphviz(m, feature_names=names,
                     class_names=['non-duplicate', 'duplicate'], label='none',
