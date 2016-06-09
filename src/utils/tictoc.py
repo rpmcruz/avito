@@ -18,7 +18,7 @@ def toc(msg=None):
         if dt > 60:
             t = '%dm%02ds' % (dt / 60, dt % 60)
         else:
-            t = '%ds' % dt
+            t = '%2ds' % dt
         if msg:
             print '%-20s %s' % (msg, t)
         else:

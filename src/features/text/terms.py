@@ -20,7 +20,7 @@ from alphabet_detector import AlphabetDetector
 ad = AlphabetDetector()
 
 
-class Brands:
+class Terms:
     def __init__(self, column):
         self.column = column
 
@@ -30,11 +30,10 @@ class Brands:
             text = text.replace(ch, '')
         return [word for word in text.split() if self.condition(word)]
 
-    def condition(self, word):
-        return ad.is_latin(word) or word in _colors
-
     def transform(self, myreader, rows):
-        ret = np.zeros(len(rows), int)
+        # very odd: this being dtype=int or float does not seem to matter
+        # in other words, only same or different seem to matter
+        ret = np.zeros(len(rows))
         rows, ix = np.unique(rows.flatten('F'), return_inverse=True)
 
         for i, (row1, row2) in enumerate(itertools.izip(
@@ -44,15 +43,20 @@ class Brands:
             words1 = set(self.get_words(text1))
             words2 = set(self.get_words(text2))
             common = words1 & words2
-            _max = max(len(words1), len(words2))
-            if _max > 0:
-                ret[i] = len(common) / float(_max)
+            den = min(len(words1), len(words2))  # or max()?
+            if den > 0:
+                ret[i] = len(common) / float(den)
             else:
                 ret[i] = 0
         return ret
 
 
-class Topics(Brands):
+class Brands(Terms):
+    def condition(self, word):
+        return ad.is_latin(word) or word in _colors
+
+
+class Topics(Terms):
     def condition(self, word):
         return not ad.is_latin(word)
 
