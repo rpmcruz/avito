@@ -340,8 +340,14 @@ if USE_XGBOOST:
     yp = pp >= 0.5
     toc('predictions')
 
+    import matplotlib.pyplot as plt
+    plt.ioff()
     xgb.plot_importance(m)
+    plt.savefig('xgb-features.pdf')
+    plt.show()
     xgb.plot_tree(m)
+    plt.savefig('xgb-tree.pdf', dpi=900)
+    plt.show()
 
 else:  # sklearn RandomForest code
     from sklearn.ensemble import RandomForestClassifier
@@ -369,7 +375,7 @@ else:  # sklearn RandomForest code
         export_graphviz(m, feature_names=names,
                         class_names=['non-duplicate', 'duplicate'],
                         label='none', impurity=False, filled=True)
-        os.system('dot -Tpdf tree.dot -o tree.pdf')  # compile dot file
+        os.system('dot -Tpdf tree.dot -o sklearn-tree.pdf')  # compile dot file
         os.remove('tree.dot')
 
 if FINAL_SUBMISSION:
