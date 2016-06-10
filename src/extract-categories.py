@@ -28,5 +28,5 @@ def fn(filename, myreader, info, lines):
 
     from utils.categorias import categorias
     names = ['"' + categorias[i] + '"' for i in np.unique(categories)]
-    names += ['"'categorias[i] + '"' for i in np.unique(parents)]
+    names += ['"' + categorias[i] + '"' for i in np.unique(parents)]
     return ([categories01, parents01], names)
