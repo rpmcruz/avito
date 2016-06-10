@@ -9,6 +9,7 @@ out/ whenever they are outdated relative to extract-*.py
 import sys
 sys.dont_write_bytecode = True
 import os
+import itertools
 import numpy as np
 import pandas as pd
 import importlib
@@ -68,22 +69,24 @@ def extract(info_filename, pairs_filename, mode):
     params = (info_filename, info_reader, info_df, pairs_lines)
     modules = [module[:-3] for module in sorted(os.listdir('.'))
                if module.startswith('extract-')]
+    csvs = ['../out/features-%s-%s.csv' % (module[8:], mode)
+            for module in modules]
 
     # create features from modules that have been created or changed
     pool = multiprocessing.Pool(multiprocessing.cpu_count()/2)
     res = []
-    for module in modules:
-        csv = '../out/features-%s-%s.csv' % (module[8:], mode)
+    for module, csv in itertools.izip(modules, csvs):
         res.append(pool.apply_async(sync_extract, (module, csv, params)))
     for r in res:
         r.get()
 
     # remove whatever has been created by extiguish modules
-    vestiges = [f for f in os.listdir('../out') if f.startswith('features-')]
-    vestiges = [f for f in vestiges if f not in [
-        'features-%s-%s.csv' % (m, mode) for m in modules]]
+    vestiges = [os.path.join('../out', f) for f in os.listdir('../out')
+                if f.startswith('features-') and f.endswith('-%s.csv' % mode)]
     for v in vestiges:
-        os.remove(v)
+        if v not in csvs:
+            print 'removing old %s...' % v
+            os.remove(os.path.join('../out', v))
 
 extract('ItemInfo_train.csv', 'ItemPairs_train.csv', 'train')
 extract('ItemInfo_test.csv', 'ItemPairs_test.csv', 'test')
