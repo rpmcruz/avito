@@ -73,7 +73,7 @@ def extract(info_filename, pairs_filename, mode):
     pool = multiprocessing.Pool(multiprocessing.cpu_count()/2)
     res = []
     for module in modules:
-        csv = '../out/features-%s-%s.csv' % (module[8:], mode)
+        csv = '../out/features-%s-%s.csv' % (module[8:-3], mode)
         res.append(pool.apply_async(sync_extract, (module, csv, params)))
     for r in res:
         r.get()
