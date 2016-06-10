@@ -21,11 +21,11 @@ def sync_extract(module, csv, params):
     create = not os.path.exists(csv)
     if not create:
         m1 = os.path.getmtime(csv)
-        m2 = os.path.getmtime(module)
+        m2 = os.path.getmtime(module + '.py')
         create = m2 > m1
     if create:
         tic()
-        i = importlib.import_module(module[:-3])
+        i = importlib.import_module(module)
         X, names = i.fn(*params)
         toc(module)
         if len(X):
@@ -66,14 +66,14 @@ def extract(info_filename, pairs_filename, mode):
 
     print '---------------------------'
     params = (info_filename, info_reader, info_df, pairs_lines)
-    modules = [module for module in sorted(os.listdir('.'))
+    modules = [module[:-3] for module in sorted(os.listdir('.'))
                if module.startswith('extract-')]
 
     # create features from modules that have been created or changed
     pool = multiprocessing.Pool(multiprocessing.cpu_count()/2)
     res = []
     for module in modules:
-        csv = '../out/features-%s-%s.csv' % (module[8:-3], mode)
+        csv = '../out/features-%s-%s.csv' % (module[8:], mode)
         res.append(pool.apply_async(sync_extract, (module, csv, params)))
     for r in res:
         r.get()
@@ -81,7 +81,7 @@ def extract(info_filename, pairs_filename, mode):
     # remove whatever has been created by extiguish modules
     vestiges = [f for f in os.listdir('../out') if f.startswith('features-')]
     vestiges = [f for f in vestiges if f not in [
-        'features-%s-%s.csv' % (m[:-3], mode) for m in modules]]
+        'features-%s-%s.csv' % (m, mode) for m in modules]]
     for v in vestiges:
         os.remove(v)
 
