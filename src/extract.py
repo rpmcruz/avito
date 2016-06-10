@@ -22,7 +22,7 @@ def sync_extract(module, csv, params):
     create = not os.path.exists(csv)
     if not create:
         m1 = os.path.getmtime(csv)
-        m2 = os.path.getmtime(module + '.py')
+        m2 = os.path.getmtime('features/' + module + '.py')
         create = m2 > m1
     if create:
         tic()
@@ -67,7 +67,7 @@ def extract(info_filename, pairs_filename, mode):
 
     print '---------------------------'
     params = (info_filename, info_reader, info_df, pairs_lines)
-    modules = [module[:-3] for module in sorted(os.listdir('.'))
+    modules = [module[:-3] for module in sorted(os.listdir('features'))
                if module.startswith('extract-')]
     csvs = ['../out/features-%s-%s.csv' % (module[8:], mode)
             for module in modules]
@@ -86,7 +86,7 @@ def extract(info_filename, pairs_filename, mode):
     for v in vestiges:
         if v not in csvs:
             print 'removing old %s...' % v
-            os.remove(os.path.join('../out', v))
+            os.remove(v)
 
 extract('ItemInfo_train.csv', 'ItemPairs_train.csv', 'train')
 extract('ItemInfo_test.csv', 'ItemPairs_test.csv', 'test')
@@ -95,4 +95,4 @@ if not os.path.exists('../out/y.csv'):
     pairs_filename = '../data/ItemPairs_train.csv'
     y = np.genfromtxt(pairs_filename, int, delimiter=',', skip_header=1,
                       usecols=[2])
-    np.savetxt('../out/y.csv', y)
+    np.savetxt('../out/y.csv', y, '%d')
