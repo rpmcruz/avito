@@ -38,12 +38,12 @@ def extract(info_filename, pairs_filename, mode):
     # transforma ItemID em linhas do ficheiro CSV e da matriz info
     lines = np.asarray(
         [(info.ix[i1]['line'], info.ix[i2]['line'])
-         for i1, i2, d in pairs], int)
+         for i1, i2 in pairs], int)
     toc('pairs to lines')
 
     for filename in os.listdir('.'):
         if filename.startswith('extract-'):
-            csv = '../out/%s-%s.csv' % (filename[:-3], mode)
+            csv = '../out/%s-%s.csv' % (filename[8:-3], mode)
             create = not os.path.exists(csv)
             if not create:
                 m1 = os.path.getmtime(csv)
@@ -57,3 +57,9 @@ def extract(info_filename, pairs_filename, mode):
 
 extract('ItemInfo_train.csv', 'ItemPairs_train.csv', 'train')
 extract('ItemInfo_test.csv', 'ItemPairs_test.csv', 'test')
+
+if os.path.exists('../out/y.csv'):
+    pairs_filename = '../data/ItemPairs_train.csv'
+    y = np.genfromtxt(pairs_filename, int, delimiter=',', skip_header=1,
+                      usecols=[2])
+    np.savetxt('../out/y.csv', y)
