@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from utils.tictoc import tic, toc
 
 
 def fn(filename, myreader, info, lines):
-    tic()
     X = []
     # not using 'locationID' because it degrades performance
     attrbs = ['price', 'metroID']
@@ -22,5 +20,4 @@ def fn(filename, myreader, info, lines):
     x = (l1[lines[:, 0]] - l2[lines[:, 1]]) ** 2
     x[np.isnan(x)] = 10000  # NaN handling
     X.append(x)
-    toc('attributes')
     return (X, attrbs + ['lon-lat'])

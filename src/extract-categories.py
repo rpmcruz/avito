@@ -2,11 +2,9 @@
 
 import numpy as np
 import pandas as pd
-from utils.tictoc import tic, toc
 
 
 def fn(filename, myreader, info, lines):
-    tic()
     # Este encoding que eu faço aqui é por causa duma limitação do sklearn.
     # Estou a codificar categories como 83 como [0,0,0,1,0]. Ou seja, cada
     # categoria passa a ser um binário. Ele só funciona assim. Isto não é uma
@@ -29,7 +27,6 @@ def fn(filename, myreader, info, lines):
     parents01 = encoding.transform(parents)
 
     from utils.categorias import categorias
-    names = [categorias[i] for i in np.unique(categories)]
-    names += [categorias[i] for i in np.unique(parents)]
-    toc('categories')
+    names = ['"' + categorias[i] + '"' for i in np.unique(categories)]
+    names += ['"'categorias[i] + '"' for i in np.unique(parents)]
     return ([categories01, parents01], names)

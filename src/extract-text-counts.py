@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from utils.tictoc import tic, toc
-
 
 def fn(filename, myreader, info, lines):
-    tic()
     from features.text.count import diff_count, both_count
     # symbols tested that were not useful: +, *, 1), a)
     count_fns = [
@@ -24,6 +21,4 @@ def fn(filename, myreader, info, lines):
     ]
     X2 = both_count(filename, lines, 3, count_fns)
     names += ['text-count-both-%d' % i for i in xrange(len(count_fns))]
-
-    toc('text counts')
     return ([X1, X2], names)
