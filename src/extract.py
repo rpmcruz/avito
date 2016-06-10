@@ -70,7 +70,7 @@ def extract(info_filename, pairs_filename, mode):
                if module.startswith('extract-')]
 
     # create features from modules that have been created or changed
-    pool = multiprocessing.Pool(2)
+    pool = multiprocessing.Pool(multiprocessing.cpu_count()/2)
     res = []
     for module in modules:
         csv = '../out/features-%s-%s.csv' % (module[8:], mode)
