@@ -26,7 +26,7 @@ def sync_extract(module, csv, params):
         create = m2 > m1
     if create:
         tic()
-        i = importlib.import_module(module)
+        i = importlib.import_module('features.' + module)
         X, names = i.fn(*params)
         toc(module)
         if len(X):
