@@ -13,7 +13,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import importlib
-import multiprocessing
+#import multiprocessing
 from utils.mycorpus import MyCSVReader
 from utils.tictoc import tic, toc
 
@@ -28,12 +28,13 @@ def sync_extract(module, csv, params):
         tic()
         i = importlib.import_module('features.' + module)
         X, names = i.fn(*params)
-        toc(module)
+        toc(module[8:])
         if len(X):
             if len(X[0].shape) == 1:
                 X = [x[:, np.newaxis] for x in X]
             X = np.concatenate(X, 1)
             assert X.shape[1] == len(names)
+            #names = ['"' + name + '"' for name in names]
             header = ','.join(names)
             fmt = '%d' if X.dtype == int else '%.6f'
             np.savetxt(csv, X, fmt, delimiter=',', header=header, comments='')
@@ -65,7 +66,6 @@ def extract(info_filename, pairs_filename, mode):
     pairs_lines = np.c_[a, b]
     toc('pairs lines')
 
-    print '---------------------------'
     params = (info_filename, info_reader, info_df, pairs_lines)
     modules = [module[:-3] for module in sorted(os.listdir('features'))
                if module.startswith('extract-')]
@@ -73,12 +73,13 @@ def extract(info_filename, pairs_filename, mode):
             for module in modules]
 
     # create features from modules that have been created or changed
-    pool = multiprocessing.Pool(multiprocessing.cpu_count()/2)
-    res = []
+    #pool = multiprocessing.Pool(multiprocessing.cpu_count()/2)
+    #res = []
     for module, csv in itertools.izip(modules, csvs):
-        res.append(pool.apply_async(sync_extract, (module, csv, params)))
-    for r in res:
-        r.get()
+        #res.append(pool.apply_async(sync_extract, (module, csv, params)))
+        sync_extract(module, csv, params)
+    #for r in res:
+    #    r.get()
 
     # remove whatever has been created by extiguish modules
     vestiges = [os.path.join('../out', f) for f in os.listdir('../out')
@@ -89,6 +90,7 @@ def extract(info_filename, pairs_filename, mode):
             os.remove(v)
 
 extract('ItemInfo_train.csv', 'ItemPairs_train.csv', 'train')
+print '---------------------------'
 extract('ItemInfo_test.csv', 'ItemPairs_test.csv', 'test')
 
 if not os.path.exists('../out/y.csv'):
