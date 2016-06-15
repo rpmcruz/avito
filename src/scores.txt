@@ -1,0 +1,34 @@
+- varying cs=colsample -
+
+cs=0.50 md=30 lr=0.30 mcw=1 g=0 score=0.9540 38m02s
+cs=0.55 md=30 lr=0.30 mcw=1 g=0 score=0.9546 13m04s
+cs=0.58 md=30 lr=0.30 mcw=1 g=0 score=0.9546 24m24s
+cs=0.58 md=30 lr=0.30 mcw=1 g=0 score=0.9545 13m33s
+cs=0.60 md=30 lr=0.30 mcw=1 g=0 score=0.9545 13m27s
+cs=0.62 md=30 lr=0.30 mcw=1 g=0 score=0.9546 13m45s
+
+cs=0.60 md=30 lr=0.24 mcw=1 g=0 score=0.9551 45m05s
+
+- varying md=max_deph -
+
+cs=0.55 md=35 lr=0.30 mcw=1 g=0 score=0.9549 14m55s
+
+
+
+- varying lr=learning_rate -
+
+cs=0.55 md=40 lr=0.20 mcw=1 g=0 score=0.9561 18m36s
+cs=0.55 md=40 lr=0.25 mcw=1 g=0 score=0.9555 16m39s
+
+cs=0.55 md=50 lr=0.15 mcw=1 g=0 score=0.9565 23m44s
+cs=0.55 md=50 lr=0.17 mcw=1 g=0 score=0.9562 21m05s
+cs=0.55 md=50 lr=0.20 mcw=1 g=0 score=0.9558 20m38s
+cs=0.55 md=50 lr=0.25 mcw=1 g=0 score=0.9555 18m54s
+
+cs=0.55 md=60 lr=0.08 mcw=1 g=0 score=0.9571 24m40s
+cs=0.55 md=60 lr=0.12 mcw=1 g=0 score=0.9568 24m25s
+cs=0.55 md=60 lr=0.15 mcw=1 g=0 score=0.9564 23m51s
+cs=0.55 md=60 lr=0.25 mcw=1 g=0 score=0.9556 21m21s
+cs=0.55 md=60 lr=0.80 mcw=1 g=0 score=0.9487 20m45s
+
+
