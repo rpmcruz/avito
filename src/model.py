@@ -16,7 +16,7 @@ def read_file(f):
     if len(X.shape) == 1:
         X = X[:, np.newaxis]
     with open(filename, 'rb') as f:
-        header = next(csv.reader(f, quotechar='"'))
+        header = next(csv.reader(f))
     return header, X
 
 
@@ -38,6 +38,7 @@ FINAL_SUBMISSION = False
 print 'read data...'
 ytr = np.genfromtxt('../out/y.csv', int)
 names, Xtr = read_files('train')
+names = [item for sublist in names for item in sublist]
 
 params = {'max_depth': range(15, 25+1)}
 if FINAL_SUBMISSION:
@@ -45,7 +46,7 @@ if FINAL_SUBMISSION:
 else:
     Xtr, Xts, ytr, yts = train_test_split(Xtr, ytr)
 
-print 'testing...'
+print 'model...'
 
 # tips:
 # http://www.slideshare.net/odsc/owen-zhangopen-sourcetoolsanddscompetitions1
@@ -55,8 +56,8 @@ subsample = 1  # 1 seems best
 gamma = 0
 
 for colsample in [0.55]:
-    for max_depth in [60, 40]:  # try bigger
-        for learning_rate in [0.08]:  # try other values > 0.1, < 0.5
+    for max_depth in [60]:  # try bigger
+        for learning_rate in [0.08]:
             for min_child_weight in [1]:  # seems fine
                 tic()
                 m = xgb.XGBClassifier(n_estimators=100,
@@ -83,13 +84,13 @@ for colsample in [0.55]:
                         gamma, roc_auc_score(yts, pp)))
                 sys.stdout.flush()
 
-'''
 import matplotlib.pyplot as plt
 plt.ioff()
-xgb.plot_importance(m)
+xgb.plot_importance(m, tick_label=names)
 plt.savefig('xgb-features.pdf')
 plt.show()
 
+'''
 xgb.plot_tree(m)
 plt.savefig('xgb-tree.pdf', dpi=900)
 plt.show()
