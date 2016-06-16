@@ -30,11 +30,11 @@ cs=0.55 md=60 lr=0.00 mcw=1 g=0 score=0.5000 21m31s
 cs=0.55 md=60 lr=0.04 mcw=1 g=0 score=0.9564 22m30s
 cs=0.55 md=60 lr=0.06 mcw=1 g=0 score=0.9569 22m43s
 cs=0.55 md=60 lr=0.08 mcw=1 g=0 score=0.9571 24m40s
+cs=0.55 md=60 lr=0.08 mcw=1 g=0 score=0.9573 24m10s
+cs=0.55 md=40 lr=0.08 mcw=1 g=0 score=0.9513 31m43s (com PCA)
 cs=0.55 md=60 lr=0.12 mcw=1 g=0 score=0.9568 24m25s
 cs=0.55 md=60 lr=0.15 mcw=1 g=0 score=0.9564 23m51s
 cs=0.55 md=60 lr=0.25 mcw=1 g=0 score=0.9556 21m21s
 cs=0.55 md=60 lr=0.80 mcw=1 g=0 score=0.9487 20m45s
-
-
 
 

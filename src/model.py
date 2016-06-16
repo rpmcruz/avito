@@ -44,7 +44,18 @@ params = {'max_depth': range(15, 25+1)}
 if FINAL_SUBMISSION:
     _, Xts = read_files('test')
 else:
+    # shuffle: shouldn't matter for our model, but could matter for others
+    idx = np.random.choice(range(len(Xtr)), len(Xtr), False)
+    Xtr = Xtr[idx]
+    ytr = ytr[idx]
+
     Xtr, Xts, ytr, yts = train_test_split(Xtr, ytr)
+
+    # testing feature reduction
+    from sklearn.decomposition import PCA
+    pca = PCA(Xtr.shape[1]/2)
+    Xtr = pca.fit_transform(Xtr)
+    Xts = pca.transform(Xts)
 
 print 'model...'
 
