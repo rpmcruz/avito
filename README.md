@@ -5,6 +5,6 @@ Avito.ru is a Russian website where people sell things. They have one problem: p
 
 Our code outranks the official Avito.ru score. We did not have the time to improve it further.
 
-**Results:** it won us a bronze medal (awarded to the top 100 for this competition)
+**Results:** it won us a bronze medal (awarded to the top 100 for this competition) [#89](https://www.kaggle.com/c/avito-duplicate-ads-detection/leaderboard/private)
 
 See [our wiki](https://github.com/rpmcruz/avito/wiki) for more information.
